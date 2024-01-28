@@ -340,6 +340,13 @@ class ShaderManager:
     _rdr_shaders: dict[str, ShaderDef] = {}
     _rdr_shaders_by_hash: dict[int, ShaderDef] = {}
 
+    rdr_standard_2lyr = ["standard_2lyr", "standard_2lyr_ground", "standard_2lyr_pxm", "standard_2lyr_pxm_ground", "standard_2lyr_tnt", 
+            "campfire_standard_2lyr"]
+
+    rdr_standard_alphas = ["standard_dirt_alpha"]
+    rdr_standard_glasses = ["standard_glass_breakable", "standard_glass_fp", "standard_glass"]
+    rdr_standard_decals = ["standard_decal_blend" , "standard_decal", "standard_decal_ground", "standard_decal_hbb","standard_decal_heightmap", 
+              "standard_decal_normal_only" , "standard_decal_tnt"]
     terrains = ["terrain_cb_w_4lyr.sps", "terrain_cb_w_4lyr_lod.sps", "terrain_cb_w_4lyr_spec.sps", "terrain_cb_w_4lyr_spec_pxm.sps", "terrain_cb_w_4lyr_pxm_spm.sps",
                 "terrain_cb_w_4lyr_pxm.sps", "terrain_cb_w_4lyr_cm_pxm.sps", "terrain_cb_w_4lyr_cm_tnt.sps", "terrain_cb_w_4lyr_cm_pxm_tnt.sps", "terrain_cb_w_4lyr_cm.sps",
                 "terrain_cb_w_4lyr_2tex.sps", "terrain_cb_w_4lyr_2tex_blend.sps", "terrain_cb_w_4lyr_2tex_blend_lod.sps", "terrain_cb_w_4lyr_2tex_blend_pxm.sps",
@@ -382,7 +389,7 @@ class ShaderManager:
                   "vehicle_paint9.sps",]
 
     def tinted_shaders():
-        return ShaderManager.cutouts + ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_cutouts + ShaderManager.veh_glasses + ShaderManager.veh_decals + ShaderManager.shadow_proxies
+        return ShaderManager.cutouts + ShaderManager.alphas + ShaderManager.glasses + ShaderManager.decals + ShaderManager.veh_cutouts + ShaderManager.veh_glasses + ShaderManager.veh_decals + ShaderManager.shadow_proxies + ShaderManager.rdr_standard_decals + ShaderManager.rdr_standard_glasses + ShaderManager.rdr_standard_alphas
 
     def cutout_shaders():
         return ShaderManager.cutouts + ShaderManager.veh_cutouts + ShaderManager.shadow_proxies

@@ -11,7 +11,9 @@ from .element import (
 )
 from .ymap import EntityList, ExtensionsList
 from numpy import float32
+from Sollumz.sollumz_properties import SollumzGame
 
+current_game = SollumzGame.GTA
 
 class YTYP:
 
@@ -19,6 +21,11 @@ class YTYP:
 
     @staticmethod
     def from_xml_file(filepath):
+        global current_game
+        if ".rsc" in filepath:
+            current_game = SollumzGame.RDR
+        else:
+            current_game = SollumzGame.GTA
         return CMapTypes.from_xml_file(filepath)
 
     @staticmethod
@@ -86,6 +93,41 @@ class CornersList(ListProperty):
     tag_name = "corners"
 
 
+class RDRCorners(ElementProperty):
+    value_types = (float)
+
+    def __init__(self):
+        super().__init__(tag_name="corners", value=[])
+
+    @classmethod
+    def from_xml(cls, element: ET.Element):
+        new = cls()
+        if element.text:
+          lines = element.text.strip().splitlines()
+          for line in lines:
+            corner = line.strip().replace(",", "").split()
+            values = [float(val) for val in corner]
+            if len(values) > 3:
+                values = values[:3]
+            new_value = Corner(value=tuple(values))
+            new.value.append(new_value)
+                    
+        return new
+
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        text = []
+
+        for corner in self.value:
+            text.append(", ".join([str(float32(val)) for val in corner.value]))
+            text.append(", " + str(float32(corner.value[0]))) 
+            text.append("\n")
+
+        element.text = "".join(text)
+
+        return element
+
+
 class AttachedObjectsBuffer(ElementProperty):
     value_types = (int)
 
@@ -129,7 +171,10 @@ class Portal(ElementTree):
         self.mirror_priority = ValueProperty("mirrorPriority")
         self.opacity = ValueProperty("opacity")
         self.audio_occlusion = ValueProperty("audioOcclusion")
-        self.corners = CornersList()
+        if current_game == SollumzGame.GTA:
+            self.corners = CornersList()
+        elif current_game == SollumzGame.RDR:
+            self.corners = RDRCorners()
         self.attached_objects = AttachedObjectsBuffer()
 
 

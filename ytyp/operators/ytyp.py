@@ -291,7 +291,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
     filename_ext = ".ytyp.xml"
 
     filter_glob: bpy.props.StringProperty(
-        default="*.ytyp.xml",
+        default="*.ytyp*.xml",
         options={"HIDDEN"},
         maxlen=255,
     )

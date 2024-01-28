@@ -430,13 +430,15 @@ def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
         if current_game == SollumzGame.GTA:
             v1 = vertices[poly.v1]
             v2 = vertices[poly.v2]
+            radius = poly.radius
         elif current_game == SollumzGame.RDR:
             v1 = vertices[poly[2]]
             v2 = vertices[poly[3]]
+            radius = poly[4]
 
         rot = get_direction_of_vectors(v1, v2)
 
-        cylinder.bound_radius = poly.radius
+        cylinder.bound_radius = radius
         cylinder.bound_length = get_distance_of_vectors(v1, v2)
         cylinder.matrix_world = Matrix()
 

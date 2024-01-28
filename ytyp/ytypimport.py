@@ -19,10 +19,16 @@ def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: Archetyp
     entities = entity_set_xml.entities
 
     for index in range(len(locations)):
+        is_portal = (locations[index] & (1 << 31)) != 0
+        location = locations[index] & 0x7FFFFFFF
         entity = create_mlo_entity(entities[index], archetype)
-        entity_room = archetype.rooms[locations[index]]
+        if is_portal:
+            entity_portal = archetype.portals[location]
+            entity.attached_portal_id = str(entity_portal.id)
+        else:
+            entity_room = archetype.rooms[location]
+            entity.attached_room_id = str(entity_room.id)
         entity.attached_entity_set_id = str(entity_set.id)
-        entity.attached_room_id = str(entity_room.id)
 
 
 def create_entity_set_entity(entity_xml: ymapxml.Entity, entity_set: EntitySetProperties):

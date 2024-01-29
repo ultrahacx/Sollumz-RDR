@@ -199,13 +199,40 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
+
+        if item.game == SollumzGame.RDR:
+            tag = "RDR"  
+        else:
+            tag = "GTA"  
+        
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=item.name, icon="BOOKMARKS")
+            row.label(text = f"[{tag}] {item.name}", icon="BOOKMARKS")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=item.name, emboss=False, icon="BOOKMARKS")
+                        text=f"[{tag}] {item.name}", emboss=False, icon="BOOKMARKS")
+
+    def filter_items(self, context, data, propname):
+        items = getattr(data, propname)
+        ordered = [item.index for item in items]
+        filtered = [self.bitflag_filter_item] * len(items)
+
+        selected = context.selected_objects
+
+        if selected and selected[0]:
+            for i, item in enumerate(items): 
+                if hasattr(item, 'game') and hasattr(selected[0], 'sollum_game_type'):
+                    if item.game != selected[0].sollum_game_type and selected[0].sollum_type != SollumType.NONE: 
+                        filtered[i] &= ~self.bitflag_filter_item
+        else:
+            sollum_game_type = context.scene.sollum_game_type
+            for i, item in enumerate(items): 
+                if hasattr(item, 'game'):
+                    if item.game != sollum_game_type: 
+                        filtered[i] &= ~self.bitflag_filter_item
+
+        return filtered, ordered
 
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):

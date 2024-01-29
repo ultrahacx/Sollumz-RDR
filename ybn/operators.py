@@ -20,6 +20,7 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
 
     def execute(self, context):
         bound_type = context.scene.create_poly_bound_type
+        sollum_game_type = context.scene.sollum_game_type
 
         selected = context.selected_objects
 
@@ -30,6 +31,10 @@ class SOLLUMZ_OT_create_polygon_bound(bpy.types.Operator):
 
         bound_obj = create_bound_shape(bound_type)
         bound_obj.parent = parent
+        if parent:
+            bound_obj.sollum_game_type = parent.sollum_game_type
+        else:
+            bound_obj.sollum_game_type = sollum_game_type
 
         return {"FINISHED"}
 
@@ -46,7 +51,7 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
 
     def execute(self, context):
         sollum_type = context.scene.poly_bound_type_verts
-
+        sollum_game_type = context.scene.sollum_game_type
         selected = context.selected_objects
 
         if len(selected) < 1 and context.active_object:
@@ -80,6 +85,10 @@ class SOLLUMZ_OT_create_polygon_box_from_verts(bpy.types.Operator):
         pobj.location = center
 
         pobj.parent = parent
+        if parent:
+            pobj.sollum_game_type = parent.sollum_game_type
+        else:
+            pobj.sollum_game_type = sollum_game_type
 
         return {"FINISHED"}
 
@@ -99,15 +108,16 @@ class SOLLUMZ_OT_convert_to_composite(bpy.types.Operator):
             return {"CANCELLED"}
 
         bound_child_type = context.scene.bound_child_type
+        sollum_game_type = context.scene.sollum_game_type
         apply_default_flags = context.scene.composite_apply_default_flag_preset
         do_center = context.scene.center_composite_to_selection
 
         if context.scene.create_seperate_composites or len(selected_meshes) == 1:
             convert_objs_to_composites(
-                selected_meshes, bound_child_type, apply_default_flags)
+                selected_meshes, bound_child_type, apply_default_flags, sollum_game_type)
         else:
             composite_obj = convert_objs_to_single_composite(
-                selected_meshes, bound_child_type, apply_default_flags)
+                selected_meshes, bound_child_type, apply_default_flags, sollum_game_type)
 
             if do_center:
                 center_composite_to_children(composite_obj)
@@ -126,6 +136,7 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
     def execute(self, context):
         bound_type = context.scene.create_bound_type
         selected = context.selected_objects
+        sollum_game_type = context.scene.sollum_game_type
 
         if selected:
             parent = selected[0]
@@ -135,6 +146,10 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
         if bound_type in [SollumType.BOUND_COMPOSITE, SollumType.BOUND_GEOMETRYBVH]:
             bound_obj = create_empty_object(bound_type)
             bound_obj.parent = parent
+            if parent:
+                bound_obj.sollum_game_type = parent.sollum_game_type
+            else:
+                bound_obj.sollum_game_type = sollum_game_type
 
             return {"FINISHED"}
 
@@ -144,6 +159,10 @@ class SOLLUMZ_OT_create_bound(bpy.types.Operator):
             return {"CANCELLED"}
 
         bound_obj.parent = parent
+        if parent:
+            bound_obj.sollum_game_type = parent.sollum_game_type
+        else:
+            bound_obj.sollum_game_type = sollum_game_type
 
         return {"FINISHED"}
 
@@ -165,7 +184,7 @@ class CreateCollisionMatHelper:
             return {"CANCELLED"}
 
         mat_index = context.scene.collision_material_index
-
+        print(mat_index)
         for obj in selected:
             self.create_material(mat_index, obj)
 

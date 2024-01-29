@@ -187,6 +187,7 @@ class CollisionMaterial(bpy.types.PropertyGroup):
 class FlagPresetProp(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
+    game: bpy.props.StringProperty("Game")
 
 
 def get_flag_presets_path():
@@ -211,6 +212,7 @@ def load_flag_presets():
         for index, preset in enumerate(flag_presets.presets):
             item = bpy.context.scene.flag_presets.add()
             item.name = str(preset.name)
+            item.game = str(preset.game)
             item.index = index
 
 

@@ -113,7 +113,7 @@ class RDRTextureDictionaryList(ElementTree, AbstractClass):
 
     def __init__(self) -> None:
         super().__init__()
-        self.version = AttributeProperty("version", 0)
+        self.version = AttributeProperty("version", 1)
         self.textures = []
     
     @classmethod

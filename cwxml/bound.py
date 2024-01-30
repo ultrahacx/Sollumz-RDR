@@ -61,7 +61,7 @@ class RDRBoundFile(ElementTree):
         current_game = SollumzGame.RDR
         self.game = current_game
         self.type = AttributeProperty("type", "Composite")
-        self.version = AttributeProperty("version", 0)
+        self.version = AttributeProperty("version", 1)
         self.box_min = VectorProperty("BoxMin")
         self.box_max = VectorProperty("BoxMax")
         self.box_center = VectorProperty("BoxCenter")
@@ -271,7 +271,7 @@ class BoundGeometryBVH(BoundChild):
             self.vertex_colors = VertexColorProperty("VertexColours")
             self.polygons = Polygons()
         elif current_game == SollumzGame.RDR:
-            self.version = AttributeProperty("version", 0)
+            self.version = AttributeProperty("version", 1)
             self.polygons = PolygonListProperty()
 
 
@@ -294,7 +294,7 @@ class BoundList(ListProperty):
     def __init__(self):
         if current_game == SollumzGame.RDR:
             self.tag_name = "Bounds"
-            self.version = AttributeProperty("version", 0)
+            self.version = AttributeProperty("version", 1)
         super().__init__(self.tag_name)
 
     @staticmethod

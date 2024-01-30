@@ -5,6 +5,10 @@
       <Flags1>map_animal, map_cover, map_dynamic, map_vehicle, map_weapon</Flags1>
       <Flags2>vehicle_not_bvh, vehicle_bvh, ped, ragdoll, animal, animal_ragdoll, object, plant, projectile, explosion, forklift_forks, test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel, glass</Flags2>
     </Item>
+    <Item name="General (Default)" game="sollumz_rdr3">
+      <Flags1>cf_map_type_horse, cf_cover_type, cf_map_type_mover, cf_map_type_vehicle, cf_map_type_weapon</Flags1>
+      <Flags2>cf_vehicle_non_bvh_type, cf_vehicle_bvh_type, cf_ped_type, cf_ragdoll_type, cf_horse_type, cf_horse_ragdoll_type, cf_object_type, cf_plant_type, cf_projectile_type, cf_explosion_type, cf_forklift_forks_type, cf_weapon_test, cf_camera_test, cf_ai_test, cf_script_test, cf_wheel_test, cf_glass_type</Flags2>
+    </Item>
     <Item name="General 2">
       <Flags1>map_animal, map_cover, map_dynamic, map_vehicle</Flags1>
       <Flags2>vehicle_not_bvh, vehicle_bvh, ped, ragdoll, animal, animal_ragdoll, object, plant, projectile, explosion, forklift_forks, test_weapon, test_camera, test_ai, test_script, test_vehicle_wheel, glass</Flags2>

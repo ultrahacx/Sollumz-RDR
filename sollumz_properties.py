@@ -608,6 +608,13 @@ def register():
         options={"HIDDEN"}
     )
 
+    bpy.types.Scene.sollum_game_type = bpy.props.EnumProperty(
+        items=items_from_enums(SollumzGame),
+        name="Sollumz Game",
+        default=SollumzGame.GTA,
+        options={"HIDDEN"}
+    )
+
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(
         items=items_from_enums(SollumType),
         name="Sollumz Type",
@@ -712,6 +719,7 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.sollum_game_type
     del bpy.types.Object.sollum_game_type
     del bpy.types.Object.sollum_type
     del bpy.types.Material.sollum_type

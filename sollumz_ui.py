@@ -240,6 +240,23 @@ class SOLLUMZ_PT_export_ymap(bpy.types.Panel, SollumzExportSettingsPanel):
         layout.prop(settings, "ymap_car_generators")
 
 
+class SOLLUMZ_PT_GAME_PANEL(bpy.types.Panel):
+    bl_label = "Game"
+    bl_idname = "SOLLUMZ_PT_GAME_PANEL"
+    bl_category = "Sollumz Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"HIDE_HEADER"}
+    bl_order = 0
+
+    def draw_header(self, context):
+        pass
+
+    def draw(self, context):
+        self.layout.label(text="Sollumz Game:")
+
+        self.layout.prop(context.scene, "sollum_game_type", text="") 
+
 class SOLLUMZ_PT_TOOL_PANEL(bpy.types.Panel):
     bl_label = "General"
     bl_idname = "SOLLUMZ_PT_TOOL_PANEL"

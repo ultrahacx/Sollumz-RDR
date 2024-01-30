@@ -196,8 +196,11 @@ def create_bound_geometry(geom_xml: BoundGeometry):
     triangles = get_poly_triangles(geom_xml.polygons)
 
     mesh = create_bound_mesh_data(geom_xml.vertices, triangles, geom_xml.vertex_colors, materials)
-    mesh.transform(Matrix.Translation(geom_xml.geometry_center))
-
+    if current_game == SollumzGame.GTA:
+        mesh.transform(Matrix.Translation(geom_xml.geometry_center))
+    elif current_game == SollumzGame.RDR:
+        mesh.transform(Matrix.Translation((geom_xml.box_min+geom_xml.box_max)*0.5))
+    
     geom_obj = create_blender_object(SollumType.BOUND_GEOMETRY, object_data=mesh, sollum_game_type=current_game)
     set_bound_child_properties(geom_xml, geom_obj)
 

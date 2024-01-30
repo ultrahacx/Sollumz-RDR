@@ -268,7 +268,7 @@ def center_verts_to_geometry(geom_xml: BoundGeometry | BoundGeometryBVH):
     if current_game == SollumzGame.GTA:
         geom_center = Vector(np.average(verts, axis=0))
     elif current_game == SollumzGame.RDR:
-        geom_center = (geom_xml.box_max+geom_xml.box_min)*0.5
+        geom_center = get_bound_center_from_bounds(geom_xml.box_min, geom_xml.box_max)
     geom_xml.vertices = [
         Vector(vert) - geom_center for vert in geom_xml.vertices]
 

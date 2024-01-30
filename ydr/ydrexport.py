@@ -128,8 +128,8 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     set_drawable_xml_flags(drawable_xml)
     set_drawable_xml_extents(drawable_xml)
 
-    # create_embedded_collision_xmls(
-    #     drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
+    create_embedded_collision_xmls(
+        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
 
     if armature_obj is not None:
         armature_obj.data.pose_position = original_pose

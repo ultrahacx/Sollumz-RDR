@@ -129,45 +129,19 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        
         if item.game == SollumzGame.RDR:
-            tag = "RDR"  
-            index = item.index - len(shadermats)
-            name = rdr_shadermats[index].ui_name
+            name = rdr_shadermats[item.index].ui_name
         else:
-            tag = "GTA"  
             name = shadermats[item.index].ui_name
 
         # If the object is selected
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
-            row.label(text=f"[{tag}] {name}", icon="SHADING_TEXTURE")
+            row.label(text=name, icon="SHADING_TEXTURE")
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=f"[{tag}] {name}", emboss=False, icon="SHADING_TEXTURE")
-            
-    def filter_items(self, context, data, propname):
-        items = getattr(data, propname)
-
-        ordered = [item.index for item in items]
-        filtered = [self.bitflag_filter_item] * len(items)
-
-        selected = context.selected_objects
-
-        if selected and selected[0]:
-            for i, item in enumerate(items): 
-                if hasattr(item, 'game') and hasattr(selected[0], 'sollum_game_type'):
-                    if item.game != selected[0].sollum_game_type and selected[0].sollum_type != SollumType.NONE: 
-                        filtered[i] &= ~self.bitflag_filter_item
-        else:
-            sollum_game_type = context.scene.sollum_game_type
-            for i, item in enumerate(items): 
-                if hasattr(item, 'game'):
-                    if item.game != sollum_game_type: 
-                        filtered[i] &= ~self.bitflag_filter_item
-                    
-        return filtered, ordered
+                        text=name, emboss=False, icon="SHADING_TEXTURE")   
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):

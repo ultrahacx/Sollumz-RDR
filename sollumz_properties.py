@@ -600,6 +600,9 @@ class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
     pass
 
 
+def updateSceneSollumzGame(self, context):
+    context.scene.sollum_shader_game_type = context.scene.sollum_game_type
+
 def register():
     bpy.types.Object.sollum_game_type = bpy.props.EnumProperty(
         items=items_from_enums(SollumzGame),
@@ -612,7 +615,8 @@ def register():
         items=items_from_enums(SollumzGame),
         name="Sollumz Game",
         default=SollumzGame.GTA,
-        options={"HIDDEN"}
+        options={"HIDDEN"},
+        update=updateSceneSollumzGame
     )
 
     bpy.types.Object.sollum_type = bpy.props.EnumProperty(

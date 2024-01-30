@@ -4,7 +4,7 @@ from typing import Optional
 from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumzGame, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
 from ..ydr.shader_materials import shadermats, rdr_shadermats
 from bpy.app.handlers import persistent
 from bpy.path import basename
@@ -415,7 +415,31 @@ def get_model_properties(model_obj: bpy.types.Object, lod_level: LODLevel) -> Dr
     return lod.mesh.drawable_model_properties
 
 
+def updateShaderList(self, context):
+    sollum_game_type = context.scene.sollum_shader_game_type
+    materials = shadermats
+    game = "sollumz_gta5"
+    
+    context.scene.shader_materials.clear()
+    if sollum_game_type == SollumzGame.RDR:
+        materials = rdr_shadermats
+        game = "sollumz_rdr3"
+        
+    for index, mat in enumerate(materials):
+        item = context.scene.shader_materials.add()
+        item.index = index
+        item.name = mat.name
+        item.game = game
+
 def register():
+    bpy.types.Scene.sollum_shader_game_type = bpy.props.EnumProperty(
+        items=items_from_enums(SollumzGame),
+        name="(HIDDEN)Sollumz Game",
+        description="Hidden property used to sync with global game selection",
+        default=SollumzGame.GTA,
+        options={"HIDDEN"},
+        update=updateShaderList
+    )
     bpy.types.Scene.shader_material_index = bpy.props.IntProperty(
         name="Shader Material Index")  # MAKE ENUM WITH THE MATERIALS NAMES
     bpy.types.Scene.shader_materials = bpy.props.CollectionProperty(
@@ -498,6 +522,7 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.sollum_shader_game_type
     del bpy.types.ShaderNodeTexImage.sollumz_texture_name
     del bpy.types.Scene.shader_material_index
     del bpy.types.Scene.shader_materials

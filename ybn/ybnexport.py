@@ -98,9 +98,13 @@ def create_composite_xml(
     obj: bpy.types.Object,
     auto_calc_inertia: bool = False,
     auto_calc_volume: bool = False,
-    out_child_obj_to_index: dict[bpy.types.Object, int] = None
+    out_child_obj_to_index: dict[bpy.types.Object, int] = None,
+    embedded_col: bool = False
 ) -> BoundComposite:
     composite_xml = BoundComposite()
+    
+    if embedded_col and obj.sollum_game_type == SollumzGame.RDR:
+        composite_xml = RDRBoundFile()
 
     for child in obj.children:
         child_xml = create_bound_xml(
@@ -609,17 +613,24 @@ def get_composite_transforms(bound_obj: bpy.types.Object):
 
 
 def set_bound_col_mat_xml_properties(bound_xml: Bound, mat: bpy.types.Material):
-    if mat is None or mat.sollum_type != MaterialType.COLLISION or current_game != SollumzGame.GTA:
+    if mat is None or mat.sollum_type != MaterialType.COLLISION:
         return
 
-    bound_xml.material_index = mat.collision_properties.collision_index
-    bound_xml.procedural_id = mat.collision_properties.procedural_id
-    bound_xml.room_id = mat.collision_properties.room_id
-    bound_xml.ped_density = mat.collision_properties.ped_density
-    bound_xml.material_color_index = mat.collision_properties.material_color_index
-    flags_lo, flags_hi = get_collision_mat_raw_flags(mat.collision_flags)
-    bound_xml.unk_flags = flags_lo
-    bound_xml.poly_flags = flags_hi
+    if current_game == SollumzGame.GTA:
+        bound_xml.material_index = mat.collision_properties.collision_index
+        bound_xml.procedural_id = mat.collision_properties.procedural_id
+        bound_xml.ped_density = mat.collision_properties.ped_density
+        bound_xml.room_id = mat.collision_properties.room_id
+        bound_xml.material_color_index = mat.collision_properties.material_color_index
+        flags_lo, flags_hi = get_collision_mat_raw_flags(mat.collision_flags)
+        bound_xml.unk_flags = flags_lo
+        bound_xml.poly_flags = flags_hi
+    elif current_game == SollumzGame.RDR:
+        bound_xml.material_name = remove_number_suffix(mat.name)
+        for flag_name in CollisionMatFlags.__annotations__.keys():
+            if flag_name not in mat.collision_flags or not mat.collision_flags[flag_name]:
+                continue
+            bound_xml.material_flags.append(f"FLAG_{flag_name.upper()}")
 
 
 def set_col_mat_xml_properties(mat_xml: Material, mat: bpy.types.Material):

@@ -2,11 +2,11 @@ from math import ceil
 from ..tools.obb import get_obb, get_obb_extents
 import traceback
 from ..cwxml.flag_preset import FlagPreset
-from ..ybn.properties import BoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
+from ..ybn.properties import BoundFlags, RDRBoundFlags, load_flag_presets, flag_presets, get_flag_presets_path
 from ..ybn.collision_materials import create_collision_material_from_index
 from ..tools.boundhelper import create_bound_shape, convert_objs_to_composites, convert_objs_to_single_composite, center_composite_to_children
 from ..tools.meshhelper import create_box_from_extents
-from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, MaterialType, BOUND_POLYGON_TYPES
+from ..sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, MaterialType, BOUND_POLYGON_TYPES, SollumzGame
 from ..sollumz_helper import SOLLUMZ_OT_base
 from ..tools.blenderhelper import get_selected_vertices, get_children_recursive, create_blender_object, create_empty_object
 import bpy
@@ -459,16 +459,22 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             try:
                 preset = flag_presets.presets[index]
 
-                for flag_name in BoundFlags.__annotations__.keys():
-                    if flag_name in preset.flags1:
-                        obj.composite_flags1[flag_name] = True
-                    else:
-                        obj.composite_flags1[flag_name] = False
+                if obj.sollum_game_type == SollumzGame.RDR:
+                    preset = flag_presets.presets[1]
+                    flags_class = RDRBoundFlags
+                    type_flags, include_flags = obj.type_flags, obj.include_flags
+                else:
+                    preset = flag_presets.presets[0]
+                    flags_class = BoundFlags
+                    type_flags, include_flags = obj.composite_flags1, obj.composite_flags2
 
-                    if flag_name in preset.flags2:
-                        obj.composite_flags2[flag_name] = True
-                    else:
-                        obj.composite_flags2[flag_name] = False
+                for flag_name in flags_class.__annotations__.keys():
+                    flag_in_preset1 = flag_name in preset.flags1
+                    flag_in_preset2 = flag_name in preset.flags2
+
+                    type_flags[flag_name] = flag_in_preset1
+                    include_flags[flag_name] = flag_in_preset2
+                    include_flags[flag_name] = flag_in_preset2
 
                 # Hacky way to force the UI to redraw. For some reason setting custom properties will not cause the object properties panel to redraw, so we have to do this.
                 obj.location = obj.location

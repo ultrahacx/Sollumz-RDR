@@ -123,6 +123,8 @@ class BoundChild(Bound, AbstractClass):
             self.composite_flags1 = FlagsProperty("CompositeFlags1")
             self.composite_flags2 = FlagsProperty("CompositeFlags2")
         elif current_game == SollumzGame.RDR:
+            self.material_name = TextProperty("MaterialName", "")
+            self.material_flags = FlagsProperty("MaterialFlags")
             self.composite_transform = MatrixProperty("Transform")
             self.type_flags = FlagsProperty("TypeFlags")
             self.include_flags = FlagsProperty("IncludeFlags")
@@ -131,12 +133,6 @@ class BoundChild(Bound, AbstractClass):
 class BoundBox(BoundChild):
     type = "Box"
 
-    def __init__(self):
-        super().__init__()
-        if current_game == SollumzGame.RDR:
-            self.material_name = TextProperty("MaterialName", "")
-            self.material_flags = FlagsProperty("MaterialFlags")
-
 
 class BoundSphere(BoundChild):
     type = "Sphere"
@@ -144,22 +140,10 @@ class BoundSphere(BoundChild):
 
 class BoundCapsule(BoundChild):
     type = "Capsule"
-    
-    def __init__(self):
-        super().__init__()
-        if current_game == SollumzGame.RDR:
-            self.material_name = TextProperty("MaterialName", "")
-            self.material_flags = FlagsProperty("MaterialFlags")
 
 
 class BoundCylinder(BoundChild):
     type = "Cylinder"
-
-    def __init__(self):
-        super().__init__()
-        if current_game == SollumzGame.RDR:
-            self.material_name = TextProperty("MaterialName", "")
-            self.material_flags = FlagsProperty("MaterialFlags")
 
 
 class BoundDisc(BoundChild):

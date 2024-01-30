@@ -60,8 +60,8 @@ from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterCBufferDef, ShaderParameterFloatVectorDef, ShaderParameterSamplerDef, ShaderParameterType
 
 from .. import logger
-from ..cwxml import drawable
-from ..cwxml import shader
+from ..cwxml import drawable, shader
+from ..ybn import ybnexport
 
 current_game = SollumzGame.GTA
 
@@ -128,8 +128,8 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     set_drawable_xml_flags(drawable_xml)
     set_drawable_xml_extents(drawable_xml)
 
-    # create_embedded_collision_xmls(
-    #     drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
+    create_embedded_collision_xmls(
+        drawable_obj, drawable_xml, auto_calc_volume, auto_calc_inertia)
 
     if armature_obj is not None:
         armature_obj.data.pose_position = original_pose
@@ -1016,10 +1016,10 @@ def set_drawable_xml_extents(drawable_xml: Drawable):
 def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml: Drawable, auto_calc_volume: bool = False, auto_calc_inertia: bool = False):
     for child in drawable_obj.children:
         bound_xml = None
-
+        ybnexport.current_game = current_game
         if child.sollum_type == SollumType.BOUND_COMPOSITE:
             bound_xml = create_composite_xml(
-                child, auto_calc_inertia, auto_calc_volume)
+                child, auto_calc_inertia, auto_calc_volume, embedded_col=True)
         elif child.sollum_type in BOUND_TYPES:
             bound_xml = create_bound_xml(
                 child, auto_calc_inertia, auto_calc_volume)

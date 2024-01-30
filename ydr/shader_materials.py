@@ -26,7 +26,15 @@ for shader in ShaderManager._shaders.values():
 
     shadermats.append(ShaderMaterial(
         name, name.replace("_", " "), shader.filename))
+    
+rdr_shadermats = []
 
+for shader in ShaderManager._rdr_shaders.values():
+    name = shader.filename.replace(".sps", "").upper()
+
+    rdr_shadermats.append(ShaderMaterial(
+        name, name.replace("_", " "), shader.filename))
+    
 
 def get_detail_extra_sampler(mat):  # move to blenderhelper.py?
     nodes = mat.node_tree.nodes

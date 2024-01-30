@@ -199,9 +199,11 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        tag = "GTA"
+
         if item.game == SollumzGame.RDR:
             tag = "RDR"  
+        else:
+            tag = "GTA"  
         
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
@@ -213,7 +215,6 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
 
     def filter_items(self, context, data, propname):
         items = getattr(data, propname)
-
         ordered = [item.index for item in items]
         filtered = [self.bitflag_filter_item] * len(items)
 
@@ -221,10 +222,18 @@ class SOLLUMZ_UL_FLAG_PRESET_LIST(bpy.types.UIList):
 
         if selected and selected[0]:
             for i, item in enumerate(items): 
-                if item.game != selected[0].sollum_game_type and selected[0].sollum_type != SollumType.NONE: 
-                    filtered[i] &= ~self.bitflag_filter_item
-                    
+                if hasattr(item, 'game') and hasattr(selected[0], 'sollum_game_type'):
+                    if item.game != selected[0].sollum_game_type and selected[0].sollum_type != SollumType.NONE: 
+                        filtered[i] &= ~self.bitflag_filter_item
+        else:
+            sollum_game_type = context.scene.sollum_game_type
+            for i, item in enumerate(items): 
+                if hasattr(item, 'game'):
+                    if item.game != sollum_game_type: 
+                        filtered[i] &= ~self.bitflag_filter_item
+
         return filtered, ordered
+
 
 class SOLLUMZ_PT_COLLISION_TOOL_PANEL(bpy.types.Panel):
     bl_label = "Collisions"
@@ -283,9 +292,6 @@ class SOLLUMZ_PT_CREATE_BOUND_PANEL(bpy.types.Panel):
         row = layout.row()
         row.operator(ybn_ops.SOLLUMZ_OT_convert_to_composite.bl_idname,
                      icon="FILE_REFRESH")
-        
-        row = layout.row()
-        row.prop(context.scene, "sollum_game_type")
         row.prop(context.scene, "bound_child_type")
 
         row = layout.row()

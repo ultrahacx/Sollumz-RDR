@@ -5,7 +5,7 @@ from ..tools.blenderhelper import lod_level_enum_flag_prop_factory
 from ..sollumz_helper import find_sollumz_parent
 from ..cwxml.light_preset import LightPresetsFile
 from ..sollumz_properties import SOLLUMZ_UI_NAMES, items_from_enums, TextureUsage, TextureFormat, LODLevel, SollumType, LightType, FlagPropertyGroup, TimeFlags
-from ..ydr.shader_materials import shadermats
+from ..ydr.shader_materials import shadermats, rdr_shadermats
 from bpy.app.handlers import persistent
 from bpy.path import basename
 
@@ -211,6 +211,7 @@ class BoneProperties(bpy.types.PropertyGroup):
 class ShaderMaterial(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
+    game: bpy.props.StringProperty("Game")
 
 
 class LightProperties(bpy.types.PropertyGroup):
@@ -335,6 +336,14 @@ def on_file_loaded(_):
         item = bpy.context.scene.shader_materials.add()
         item.index = index
         item.name = mat.name
+        item.game = "sollumz_gta5"
+    # hacky shit v2
+    start_index = len(shadermats)
+    for index, mat in enumerate(rdr_shadermats):
+        item = bpy.context.scene.shader_materials.add()
+        item.index = start_index + index
+        item.name = mat.name
+        item.game = "sollumz_rdr3"
 
     load_light_presets()
 

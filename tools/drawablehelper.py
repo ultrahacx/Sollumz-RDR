@@ -1,7 +1,7 @@
 import bpy
 from mathutils import Vector
 from ..ydr.shader_materials import create_shader, create_tinted_shader_graph, obj_has_tint_mats, try_get_node
-from ..sollumz_properties import SollumType, MaterialType, LODLevel
+from ..sollumz_properties import SollumType, MaterialType, LODLevel, SollumzGame
 from ..tools.blenderhelper import create_empty_object, find_bsdf_and_material_output
 from ..cwxml.drawable import BonePropertiesManager, Drawable, DrawableModel, TextureShaderParameter, VectorShaderParameter
 from ..cwxml.shader import (
@@ -202,16 +202,17 @@ def set_recommended_bone_properties(bone):
         flag.name = flag_name
 
 
-def convert_obj_to_drawable(obj: bpy.types.Object):
+def convert_obj_to_drawable(obj: bpy.types.Object, sollum_game_type: SollumzGame):
     drawable_obj = create_empty_object(SollumType.DRAWABLE)
     drawable_obj.location = obj.location
 
     obj_name = obj.name
 
-    convert_obj_to_model(obj)
+    convert_obj_to_model(obj, sollum_game_type)
     obj.name = f"{obj.name}.model"
     # Set drawable obj name after converting obj to a model to avoid .00# suffix
     drawable_obj.name = obj_name
+    drawable_obj.sollum_game_type = sollum_game_type
 
     drawable_obj.parent = obj.parent
     obj.parent = drawable_obj
@@ -220,19 +221,20 @@ def convert_obj_to_drawable(obj: bpy.types.Object):
     return drawable_obj
 
 
-def convert_objs_to_single_drawable(objs: list[bpy.types.Object]):
+def convert_objs_to_single_drawable(objs: list[bpy.types.Object], sollum_game_type: SollumzGame):
     drawable_obj = create_empty_object(SollumType.DRAWABLE)
 
     for obj in objs:
-        convert_obj_to_model(obj)
+        convert_obj_to_model(obj, sollum_game_type)
         obj.name = f"{obj.name}.model"
         obj.parent = drawable_obj
 
     return drawable_obj
 
 
-def convert_obj_to_model(obj: bpy.types.Object):
+def convert_obj_to_model(obj: bpy.types.Object, sollum_game_type: SollumzGame):
     obj.sollum_type = SollumType.DRAWABLE_MODEL
+    obj.sollum_game_type = sollum_game_type
     obj.sollumz_lods.add_empty_lods()
     obj.sollumz_lods.set_lod_mesh(LODLevel.HIGH, obj.data)
     obj.sollumz_lods.set_active_lod(LODLevel.HIGH)

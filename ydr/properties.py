@@ -331,20 +331,21 @@ class LightFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
 @persistent
 def on_file_loaded(_):
     # Handler sets the default value of the ShaderMaterials collection on blend file load
+    sollum_game_type = bpy.context.scene.sollum_shader_game_type
+    materials = shadermats
+    game = "sollumz_gta5"
+    
     bpy.context.scene.shader_materials.clear()
-    for index, mat in enumerate(shadermats):
+    if sollum_game_type == SollumzGame.RDR:
+        materials = rdr_shadermats
+        game = "sollumz_rdr3"
+        
+    for index, mat in enumerate(materials):
         item = bpy.context.scene.shader_materials.add()
         item.index = index
         item.name = mat.name
-        item.game = "sollumz_gta5"
-    # hacky shit v2
-    start_index = len(shadermats)
-    for index, mat in enumerate(rdr_shadermats):
-        item = bpy.context.scene.shader_materials.add()
-        item.index = start_index + index
-        item.name = mat.name
-        item.game = "sollumz_rdr3"
-
+        item.game = game
+   
     load_light_presets()
 
 

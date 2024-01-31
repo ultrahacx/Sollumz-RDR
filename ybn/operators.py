@@ -186,6 +186,8 @@ class CreateCollisionMatHelper:
         mat_index = context.scene.collision_material_index
         print(mat_index)
         for obj in selected:
+            if obj.type != "MESH":
+                continue
             self.create_material(mat_index, obj)
 
         return {"FINISHED"}

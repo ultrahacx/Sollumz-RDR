@@ -1,7 +1,7 @@
 import bpy
-from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType
+from ..sollumz_properties import SOLLUMZ_UI_NAMES, SollumType, SollumzGame, items_from_enums
 from bpy.app.handlers import persistent
-from .collision_materials import collisionmats
+from .collision_materials import collisionmats, rdr_collisionmats
 from ..cwxml.flag_preset import FlagPresetsFile
 from ..tools.meshhelper import create_disc, create_cylinder, create_sphere, create_capsule, create_box
 from mathutils import Vector, Matrix
@@ -182,6 +182,7 @@ class BoundProperties(bpy.types.PropertyGroup):
 class CollisionMaterial(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty("Index")
     name: bpy.props.StringProperty("Name")
+    game: bpy.props.StringProperty("Game")
 
 
 class FlagPresetProp(bpy.types.PropertyGroup):
@@ -217,11 +218,18 @@ def load_flag_presets():
 
 
 def load_collision_materials():
+    sollum_game_type = bpy.context.scene.sollum_shader_game_type
+    materials = collisionmats
+    game = "sollumz_gta5"
+    if sollum_game_type == SollumzGame.RDR:
+        materials = rdr_collisionmats
+        game = "sollumz_rdr3"
     bpy.context.scene.collision_materials.clear()
-    for index, mat in enumerate(collisionmats):
+    for index, mat in enumerate(materials):
         item = bpy.context.scene.collision_materials.add()
         item.index = index
         item.name = mat.name
+        item.game = game
 
 
 # Handler sets the default value of the CollisionMaterials collection on blend file load
@@ -257,6 +265,23 @@ def update_bounds(self, context):
                        length=self.bound_length)
 
 
+def updateCollisionMaterialList(self, context):
+    sollum_game_type = context.scene.sollum_collision_material_game_type
+    materials = collisionmats
+    game = "sollumz_gta5"
+
+    context.scene.collision_materials.clear()
+    if sollum_game_type == SollumzGame.RDR:
+        materials = rdr_collisionmats
+        game = "sollumz_rdr3"
+
+    for index, mat in enumerate(materials):
+        item = context.scene.collision_materials.add()
+        item.index = index
+        item.name = mat.name
+        item.game = game
+
+
 def register():
     bpy.types.Object.bound_properties = bpy.props.PointerProperty(
         type=BoundProperties)
@@ -280,6 +305,14 @@ def register():
     bpy.types.Object.include_flags = bpy.props.PointerProperty(
         type=RDRBoundFlags)
 
+    bpy.types.Scene.sollum_collision_material_game_type = bpy.props.EnumProperty(
+        items=items_from_enums(SollumzGame),
+        name="(HIDDEN)Sollumz Game",
+        description="Hidden property used to sync with global game selection",
+        default=SollumzGame.GTA,
+        options={"HIDDEN"},
+        update=updateCollisionMaterialList
+    )
     bpy.types.Scene.collision_material_index = bpy.props.IntProperty(
         name="Material Index")
     bpy.types.Scene.collision_materials = bpy.props.CollectionProperty(

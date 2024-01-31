@@ -1,7 +1,7 @@
 import bpy
 from .properties import BoundFlags, RDRBoundFlags, CollisionProperties, CollisionMatFlags, BoundProperties
 from ..sollumz_properties import MaterialType, SollumType, SollumzGame, BOUND_TYPES, BOUND_POLYGON_TYPES
-from .collision_materials import collisionmats
+from .collision_materials import collisionmats, rdr_collisionmats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from . import operators as ybn_ops
 
@@ -184,6 +184,9 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
         name = collisionmats[item.index].ui_name
+        if item.game == SollumzGame.RDR:
+            name = rdr_collisionmats[item.index].ui_name
+        
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row()
             row.label(text=name, icon="MATERIAL")

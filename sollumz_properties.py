@@ -602,6 +602,7 @@ class ObjectEntityProperties(bpy.types.PropertyGroup, EntityProperties):
 
 def updateSceneSollumzGame(self, context):
     context.scene.sollum_shader_game_type = context.scene.sollum_game_type
+    context.scene.sollum_collision_material_game_type = context.scene.sollum_game_type
 
 def register():
     bpy.types.Object.sollum_game_type = bpy.props.EnumProperty(

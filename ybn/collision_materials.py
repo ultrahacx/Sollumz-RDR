@@ -532,10 +532,14 @@ def create_col_material(collision_mat):
 
 
 def create_collision_material_from_index(index: int):
+    game = bpy.context.scene.sollum_collision_material_game_type
     matinfo = collisionmats[0]
 
     try:
-        matinfo = collisionmats[index]
+        if game == SollumzGame.GTA:
+            matinfo = collisionmats[index]
+        elif game == SollumzGame.RDR:
+            matinfo = rdr_collisionmats[index]
     except IndexError:
         logger.warning(
             f"Invalid material index '{index}'! Setting to default...")

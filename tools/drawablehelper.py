@@ -49,8 +49,8 @@ class MaterialConverter:
         for i in range(min(src_count, dst_count)):
             dst_node.set(i, src_node.get(i))
 
-    def convert_shader_to_shader(self, shader_name: str):
-        shader = ShaderManager.find_shader(shader_name)
+    def convert_shader_to_shader(self, shader_name: str, game: SollumType):
+        shader = ShaderManager.find_shader(shader_name, game)
         assert shader is not None
 
         for param in shader.parameters:
@@ -61,7 +61,9 @@ class MaterialConverter:
                       ShaderParameterType.FLOAT2 |
                       ShaderParameterType.FLOAT3 |
                       ShaderParameterType.FLOAT4 |
-                      ShaderParameterType.FLOAT4X4):
+                      ShaderParameterType.FLOAT4X4 |
+                      ShaderParameterType.SAMPLER |
+                      ShaderParameterType.CBUFFER):
                     self._convert_parameter_node(param)
                 case _:
                     raise Exception(f"Unknown shader parameter! {param.type=} {param.name=}")
@@ -109,8 +111,8 @@ class MaterialConverter:
         self.specular_node = self._get_specular_node()
         self.normal_node = self._get_normal_node()
 
-    def _create_new_material(self, shader_name):
-        self.new_material = create_shader(shader_name)
+    def _create_new_material(self, shader_name, game):
+        self.new_material = create_shader(shader_name, game)
 
     def _set_new_node_images(self):
         if self.new_material is None:
@@ -163,12 +165,12 @@ class MaterialConverter:
 
         return "default.sps"
 
-    def convert(self, shader_name: str) -> bpy.types.Material:
+    def convert(self, shader_name: str, game: SollumzGame) -> bpy.types.Material:
         """Convert the material to a Sollumz material of the provided shader name."""
-        self._create_new_material(shader_name)
+        self._create_new_material(shader_name, game)
 
         if self.material.sollum_type == MaterialType.SHADER:
-            self.convert_shader_to_shader(shader_name)
+            self.convert_shader_to_shader(shader_name, game)
         else:
             self._get_nodes()
             self._set_new_node_images()

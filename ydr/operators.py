@@ -378,16 +378,15 @@ class MaterialConverterHelper:
 
         return materials
 
-    def get_shader_name(self):
-        game = bpy.context.scene.shader_materials[bpy.context.scene.shader_material_index].game
-        if game == SollumzGame.RDR:
-            index = bpy.context.scene.shader_material_index - len(shadermats)
-            return rdr_shadermats[index].value
-        else:
-            return shadermats[bpy.context.scene.shader_material_index].value
+    def get_shader_name(self, sollum_game_type):
+        materials = shadermats
+        if sollum_game_type == SollumzGame.RDR:
+            materials = rdr_shadermats
+        return materials[bpy.context.scene.shader_material_index].value
 
     def convert_material(self, obj: bpy.types.Object, material: bpy.types.Material) -> bpy.types.Material | None:
-        return MaterialConverter(obj, material).convert(self.get_shader_name())
+        sollum_game_type = bpy.context.scene.sollum_game_type
+        return MaterialConverter(obj, material).convert(self.get_shader_name(sollum_game_type), sollum_game_type)
 
     def execute(self, context):
         for obj in context.selected_objects:
@@ -458,21 +457,21 @@ class SOLLUMZ_OT_create_shader_material(SOLLUMZ_OT_base, bpy.types.Operator):
     def run(self, context):
 
         objs = bpy.context.selected_objects
-        sollum_game_type = context.scene.sollum_game_type
+
         if len(objs) == 0:
             self.warning(
                 f"Please select a object to add a shader material to.")
             return False
+        
+        sollum_game_type = context.scene.sollum_game_type
+        materials = shadermats
+        if sollum_game_type == SollumzGame.RDR:
+            materials = rdr_shadermats
 
         for obj in objs:
-            game = context.scene.shader_materials[context.scene.shader_material_index].game or sollum_game_type
-            if game == SollumzGame.RDR:
-                index = context.scene.shader_material_index - len(shadermats)
-                shader = rdr_shadermats[index].value
-            else:
-                shader = shadermats[context.scene.shader_material_index].value
+            shader = materials[context.scene.shader_material_index].value
             try:
-                self.create_material(context, obj, shader, game)
+                self.create_material(context, obj, shader, sollum_game_type)
                 self.message(f"Added a {shader} shader to {obj.name}.")
             except:
                 self.message(

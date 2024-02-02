@@ -11,7 +11,7 @@ from .element import (
 )
 from .ymap import EntityList, ExtensionsList
 from numpy import float32
-from Sollumz.sollumz_properties import SollumzGame
+from ..sollumz_properties import SollumzGame
 
 current_game = SollumzGame.GTA
 
@@ -39,9 +39,13 @@ class BaseArchetype(ElementTree):
     def __init__(self):
         super().__init__()
         self.type = AttributeProperty("type", "CBaseArchetypeDef")
+        if current_game == SollumzGame.RDR:
+            self.load_flags = ValueProperty("loadFlags")
         self.lod_dist = ValueProperty("lodDist")
         self.flags = ValueProperty("flags")
-        self.special_attribute = ValueProperty("specialAttribute")
+        self.avoidanceflags = ValueProperty("avoidanceflags")
+        if current_game == SollumzGame.RDR:
+            self.special_attribute = ValueProperty("specialAttribute")
         self.bb_min = VectorProperty("bbMin")
         self.bb_max = VectorProperty("bbMax")
         self.bs_center = VectorProperty("bsCentre")
@@ -55,7 +59,9 @@ class BaseArchetype(ElementTree):
         self.asset_type = TextProperty("assetType")
         self.asset_name = TextProperty("assetName")
         self.extensions = ExtensionsList()
-
+        if current_game == SollumzGame.RDR:
+            self.guid = ValueProperty("guid")
+            self.unknown_1 = TextProperty("iypiqkia_0x07d164a8")
 
 class TimeArchetype(BaseArchetype):
     def __init__(self):

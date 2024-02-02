@@ -160,6 +160,17 @@ class AssetType(str, Enum):
     ASSETLESS = "sollumz_asset_assetless"
 
 
+class MapEntityType(str, Enum):
+    UNITIALIZED = "sollumz_map_entity_unintialized"
+    BUILDING = "sollumz_map_entity_building"
+    ANIMATED_BUILDING = "sollumz_map_entity_animated_building"
+    DUMMY_OBJECT = "sollumz_map_entity_dummy_object"
+    COMPOSITE_ENTITY = "sollumz_map_entity_composite_entity"
+    INTERIOR_INSTANCE = "sollumz_map_interior_instance"
+    GRASS_BATCH = "sollumz_map_entity_grass_batch"
+    PROP_BATCH = "sollumz_map_entity_prop_batch"
+
+
 class VehicleLightID(str, Enum):
     NONE = "none"
     ALWAYS_ON = "0"
@@ -402,6 +413,15 @@ SOLLUMZ_UI_NAMES = {
     AssetType.DRAWABLE: "Drawable",
     AssetType.DRAWABLE_DICTIONARY: "Drawable Dictionary",
     AssetType.ASSETLESS: "Assetless",
+
+    MapEntityType.UNITIALIZED: "Uninitialized",
+    MapEntityType.BUILDING: "Building",
+    MapEntityType.ANIMATED_BUILDING: "Animated Building",
+    MapEntityType.DUMMY_OBJECT: "Dummy Object",
+    MapEntityType.COMPOSITE_ENTITY: "Composite Entity",
+    MapEntityType.INTERIOR_INSTANCE: "Interior Instance",
+    MapEntityType.GRASS_BATCH: "Grass Batch",
+    MapEntityType.PROP_BATCH: "Prop Batch",
 
     VehicleLightID.NONE: "None",
     VehicleLightID.CUSTOM: "Custom",

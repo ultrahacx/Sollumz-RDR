@@ -4,10 +4,11 @@ from typing import Union
 from mathutils import Vector, Quaternion
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
-from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
+from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel, SollumzGame, MapEntityType
 from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
 
+current_game = SollumzGame.GTA
 
 def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties):
     """Create an mlo entity sets from an xml for the provided archetype data-block."""
@@ -240,6 +241,27 @@ def get_asset_type_enum(xml_asset_type: str) -> str:
     return AssetType.ASSETLESS
 
 
+def get_map_entity_type_enum(map_entity_type: str) -> str:
+    """Get MapEntityType enum from xml asset type string."""
+
+    if map_entity_type == "MAP_ENTITY_TYPE_UNINITIALIZED":
+        return MapEntityType.UNITIALIZED
+    elif map_entity_type == "MAP_ENTITY_TYPE_BUILDING":
+        return MapEntityType.BUILDING
+    elif map_entity_type == "MAP_ENTITY_TYPE_ANIMATED_BUILDING":
+        return MapEntityType.ANIMATED_BUILDING
+    elif map_entity_type == "MAP_ENTITY_TYPE_DUMMY_OBJECT":
+        return MapEntityType.DUMMY_OBJECT
+    elif map_entity_type == "MAP_ENTITY_TYPE_COMPOSITE_ENTITY":
+        return MapEntityType.COMPOSITE_ENTITY
+    elif map_entity_type == "MAP_ENTITY_TYPE_INTERIOR_INSTANCE":
+        return MapEntityType.INTERIOR_INSTANCE
+    elif map_entity_type == "MAP_ENTITY_TYPE_GRASS_BATCH":
+        return MapEntityType.GRASS_BATCH
+    elif map_entity_type == "MAP_ENTITY_TYPE_PROP_BATCH":
+        return MapEntityType.PROP_BATCH
+
+
 def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProperties):
     """Create a ytyp archetype given an archetype cwxml and a Blender ytyp data-block."""
 
@@ -260,6 +282,11 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
     archetype.asset_name = archetype_xml.asset_name
     archetype.asset_type = get_asset_type_enum(archetype_xml.asset_type)
 
+    if current_game == SollumzGame.RDR:
+        archetype.load_flags = int(archetype_xml.load_flags, 0)
+        archetype.guid = int(archetype_xml.guid, 0)
+        archetype.unknown_1 = get_map_entity_type_enum(archetype_xml.unknown_1)
+
     find_and_set_archetype_asset(archetype)
 
     if archetype_xml.type == "CBaseArchetypeDef":
@@ -276,11 +303,15 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
         create_extension(extension_xml, archetype)
 
 
-def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes):
+def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes, game: SollumzGame):
     """Create a ytyp data-block in the Blender scene given a ytyp cwxml."""
+
+    global current_game
+    current_game = game
 
     ytyp: CMapTypesProperties = bpy.context.scene.ytyps.add()
     ytyp.name = ytyp_xml.name
+    ytyp.game = current_game
 
     bpy.context.scene.ytyp_index = len(bpy.context.scene.ytyps) - 1
 

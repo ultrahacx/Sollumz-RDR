@@ -1,6 +1,6 @@
 from abc import ABC as AbstractClass, abstractmethod
 from collections import defaultdict
-from Sollumz.sollumz_properties import SollumzGame
+from ..sollumz_properties import SollumzGame
 from mathutils import Vector
 from xml.etree import ElementTree as ET
 from .element import (
@@ -47,7 +47,7 @@ class BoundFile(ElementTree):
         super().__init__()
         global current_game
         current_game = SollumzGame.GTA
-        self.game = SollumzGame.GTA
+        self.game = current_game
         self.composite = BoundComposite()
 
 

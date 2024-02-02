@@ -1,7 +1,7 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ...sollumz_ui import FlagsPanel, TimeFlagsPanel
-from ...sollumz_properties import AssetType, ArchetypeType
+from ...sollumz_properties import AssetType, ArchetypeType, SollumzGame
 from ..utils import get_selected_archetype, get_selected_ytyp
 from .ytyp import SOLLUMZ_PT_YTYP_TOOL_PANEL
 
@@ -43,8 +43,12 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
+        selected_ytyp = get_selected_ytyp(context)
         layout.prop(selected_archetype, "type")
         layout.prop(selected_archetype, "name")
+        if selected_ytyp.game == SollumzGame.RDR:
+             layout.prop(selected_archetype, "load_flags")
+             layout.prop(selected_archetype, "avoidanceflags")
         layout.prop(selected_archetype, "special_attribute")
 
         if selected_archetype.asset_type != AssetType.ASSETLESS:
@@ -57,6 +61,9 @@ class SOLLUMZ_PT_ARCHETYPE_PANEL(TabPanel, bpy.types.Panel):
 
         layout.prop(selected_archetype, "asset_type")
         layout.prop(selected_archetype, "asset_name")
+        if selected_ytyp.game == SollumzGame.RDR:
+            layout.prop(selected_archetype, "guid")
+            layout.prop(selected_archetype, "unknown_1")
         layout.prop(selected_archetype, "asset", text="Linked Object")
 
 

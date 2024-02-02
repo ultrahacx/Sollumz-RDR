@@ -3,12 +3,14 @@ import bpy
 from mathutils import Euler, Vector, Quaternion, Matrix
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
-from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel
+from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel, SollumzGame, MapEntityType
 from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
 from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
+from ..cwxml import ytyp
 
+current_game = SollumzGame.GTA
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of room from the mlo archetype entities collection provided."""
@@ -267,7 +269,28 @@ def get_xml_asset_type(asset_type: AssetType) -> str:
         return "ASSET_TYPE_DRAWABLEDICTIONARY"
     elif asset_type == AssetType.ASSETLESS:
         return "ASSET_TYPE_ASSETLESS"
+    
 
+def get_xml_map_entity_type(map_entity_type: MapEntityType) -> str:
+    """Get xml asset type string from AssetType enum."""
+
+    if map_entity_type == MapEntityType.UNITIALIZED:
+        return "MAP_ENTITY_TYPE_UNINITIALIZED"
+    elif map_entity_type == MapEntityType.BUILDING:
+        return "MAP_ENTITY_TYPE_BUILDING"
+    elif map_entity_type == MapEntityType.ANIMATED_BUILDING:
+        return "MAP_ENTITY_TYPE_ANIMATED_BUILDING"
+    elif map_entity_type == MapEntityType.DUMMY_OBJECT:
+        return "MAP_ENTITY_TYPE_DUMMY_OBJECT"
+    elif map_entity_type == MapEntityType.COMPOSITE_ENTITY:
+        return "MAP_ENTITY_TYPE_COMPOSITE_ENTITY"
+    elif map_entity_type == MapEntityType.INTERIOR_INSTANCE:
+        return "MAP_ENTITY_TYPE_INTERIOR_INSTANCE"
+    elif map_entity_type == MapEntityType.GRASS_BATCH:
+        return "MAP_ENTITY_TYPE_GRASS_BATCH"
+    elif map_entity_type == MapEntityType.PROP_BATCH:
+        return "MAP_ENTITY_TYPE_PROP_BATCH"
+    
 
 def create_mlo_archetype_children_xml(archetype: ArchetypeProperties, archetype_xml: ytypxml.MloArchetype):
     """Create all mlo children from an archetype data-block for the provided archetype xml."""
@@ -307,7 +330,9 @@ def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool 
         else:
             archetype_xml = ytypxml.BaseArchetype()
         set_archetype_xml_bounds(archetype, archetype_xml, apply_transforms)
-
+   
+    if current_game == SollumzGame.RDR:
+        archetype_xml.load_flags = archetype.load_flags
     archetype_xml.lod_dist = archetype.lod_dist
     archetype_xml.flags = archetype.flags.total
     archetype_xml.special_attribute = archetype.special_attribute
@@ -319,7 +344,9 @@ def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool 
     archetype_xml.physics_dictionary = archetype.physics_dictionary.lower()
     archetype_xml.asset_name = archetype.asset_name.lower()
     archetype_xml.asset_type = get_xml_asset_type(archetype.asset_type)
-
+    if current_game == SollumzGame.RDR:
+        archetype_xml.unknown_1 = get_xml_map_entity_type(archetype.unknown_1)
+        archetype_xml.guid = archetype.guid
     for extension in archetype.extensions:
         extension_xml = create_extension_xml(extension)
         archetype_xml.extensions.append(extension_xml)
@@ -331,11 +358,14 @@ def selected_ytyp_to_xml(apply_transforms: bool = False) -> ytypxml.CMapTypes:
     """Create a ytyp xml from the selected ytyp data-block."""
 
     selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
-    ytyp = ytypxml.CMapTypes()
-    ytyp.name = selected_ytyp.name
+    global current_game
+    current_game = selected_ytyp.game
+    ytyp.current_game = current_game
+    ytyp_xml = ytypxml.CMapTypes()
+    ytyp_xml.name = selected_ytyp.name
 
     for archetype in selected_ytyp.archetypes:
         archetype_xml = create_archetype_xml(archetype, apply_transforms)
-        ytyp.archetypes.append(archetype_xml)
+        ytyp_xml.archetypes.append(archetype_xml)
 
-    return ytyp
+    return ytyp_xml

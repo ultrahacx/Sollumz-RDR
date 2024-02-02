@@ -48,7 +48,6 @@ def export_ybn(obj: bpy.types.Object, filepath: str) -> bool:
 
     global current_game
     current_game = obj.sollum_game_type
-    bound.current_game = current_game
     
     if current_game == SollumzGame.GTA:
         bounds = BoundFile()

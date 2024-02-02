@@ -3,7 +3,7 @@ import traceback
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from ...sollumz_helper import SOLLUMZ_OT_base, has_embedded_textures, has_collision
-from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType
+from ...sollumz_properties import SOLLUMZ_UI_NAMES, ArchetypeType, AssetType, SollumType, SollumzGame, MapEntityType
 from ...sollumz_operators import SelectTimeFlagsRange, ClearTimeFlags
 from ...sollumz_preferences import get_export_settings
 from ...cwxml.ytyp import YTYP
@@ -21,6 +21,7 @@ class SOLLUMZ_OT_create_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         item = context.scene.ytyps.add()
         index = len(context.scene.ytyps)
         item.name = f"YTYP.{index}"
+        item.game = context.scene.sollum_game_type
         context.scene.ytyp_index = index - 1
 
         return True
@@ -166,16 +167,18 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
         selected_objs = context.selected_objects
         found = False
         for obj in selected_objs:
+            selected_ytyp = get_selected_ytyp(context)
             archetype_type = context.scene.create_archetype_type
             if not obj.sollum_type in self.allowed_types:
                 continue
             if archetype_type == ArchetypeType.MLO:
+                if selected_ytyp.game == SollumzGame.RDR:
+                    item.unknown_1 = MapEntityType.INTERIOR_INSTANCE
                 if obj.sollum_type != SollumType.BOUND_COMPOSITE:
                     self.message(
                         f"MLO asset '{obj.name}' must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
                     continue
             found = True
-            selected_ytyp = get_selected_ytyp(context)
             item = selected_ytyp.new_archetype()
 
             item.name = obj.name
@@ -192,6 +195,8 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
 
             if obj.sollum_type == SollumType.DRAWABLE:
                 item.asset_type = AssetType.DRAWABLE
+                if selected_ytyp.game == SollumzGame.RDR:
+                    item.unknown_1 = MapEntityType.BUILDING
             elif obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
                 item.asset_type = AssetType.DRAWABLE_DICTIONARY
             elif obj.sollum_type == SollumType.BOUND_COMPOSITE:
@@ -298,7 +303,10 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     def run(self, context):
         try:
-            ytyp_to_obj(YTYP.from_xml_file(self.filepath))
+            game = SollumzGame.GTA
+            if ".rsc" in self.filepath:
+                game = SollumzGame.RDR
+            ytyp_to_obj(YTYP.from_xml_file(self.filepath), game)
             self.message(f"Successfully imported: {self.filepath}")
             return True
         except:
@@ -313,7 +321,7 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     bl_action = "Export a YTYP"
 
     filter_glob: bpy.props.StringProperty(
-        default="*.ytyp.xml",
+        default="*.ytyp*.xml",
         options={"HIDDEN"},
         maxlen=255,
     )
@@ -336,8 +344,15 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
         num_ytyps = len(context.scene.ytyps)
         return num_ytyps > 0 and context.scene.ytyp_index < num_ytyps
 
+    def get_file_extension(self):
+        selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
+        if selected_ytyp.game == SollumzGame.RDR:
+            return ".ytyp.rsc.xml"
+        else:
+            return ".ytyp.xml"
+        
     def get_filepath(self, name):
-        return os.path.join(self.directory, name + ".ytyp.xml")
+        return os.path.join(self.directory, name + self.get_file_extension())
 
     def run(self, context):
         try:

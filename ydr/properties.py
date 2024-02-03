@@ -51,6 +51,9 @@ class DrawableProperties(bpy.types.PropertyGroup):
         min=0, max=10000, default=9998, name="Lod Distance Vlow")
     unknown_9A: bpy.props.FloatProperty(
         min=0, max=10000, default=9998, name="Unknown 9A")
+    unknown_24: bpy.props.IntProperty(min=0, default=0, name="Unknown 24")
+    unknown_60: bpy.props.IntProperty(min=0, default=0, name="Unknown 60")
+    parent_bone_tag: bpy.props.IntProperty(min=0, default=0, name="Parent BoneTag")
 
     shader_order: bpy.props.PointerProperty(type=DrawableShaderOrder)
 

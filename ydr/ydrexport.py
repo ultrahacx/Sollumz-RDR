@@ -103,12 +103,12 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
         return drawable_xml
 
     if armature_obj or drawable_obj.type == "ARMATURE":
-        if current_game == SollumzGame.RDR:
-            raise Exception("Stopping export since armature drawables are not yet supported")
+        
         armature_obj = armature_obj or drawable_obj
 
         drawable_xml.skeleton = create_skeleton_xml(armature_obj, apply_transforms)
-        drawable_xml.joints = create_joints_xml(armature_obj)
+        if current_game == SollumzGame.GTA:
+            drawable_xml.joints = create_joints_xml(armature_obj)
 
         bones = armature_obj.data.bones
 
@@ -794,6 +794,11 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, apply_transforms: bool =
 
     calculate_skeleton_unks(skeleton_xml)
 
+    if current_game == SollumzGame.RDR:
+        skeleton_xml.unknown_24 = str(armature_obj.drawable_properties.unknown_24)
+        skeleton_xml.unknown_60 = str(armature_obj.drawable_properties.unknown_60)
+        skeleton_xml.parent_bone_tag = str(armature_obj.drawable_properties.parent_bone_tag)
+
     return skeleton_xml
 
 
@@ -807,6 +812,10 @@ def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bp
 
     bone_xml.parent_index = get_bone_parent_index(bone, armature)
     bone_xml.sibling_index = get_bone_sibling_index(bone, armature)
+
+    # Needs more research56 as this result is not consistent in all cases
+    if bone_xml.sibling_index == -1 and current_game == SollumzGame.RDR:
+        bone_xml.last_sibling_index = len(armature.bones)
 
     set_bone_xml_flags(bone_xml, pose_bone)
     set_bone_xml_transforms(bone_xml, bone, armature_matrix)
@@ -870,7 +879,8 @@ def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matri
     # transform_unk doesn't appear in openformats so oiv calcs it right
     # what does it do? the bone length?
     # default value for this seems to be <TransformUnk x="0" y="4" z="-3" w="0" />
-    bone_xml.transform_unk = Quaternion((0, 0, 4, -3))
+    if current_game == SollumzGame.GTA:
+        bone_xml.transform_unk = Quaternion((0, 0, 4, -3))
 
 
 def calculate_skeleton_unks(skeleton_xml: Skeleton):
@@ -904,10 +914,14 @@ def calculate_skeleton_unks(skeleton_xml: Skeleton):
             translation), " ".join(rotation), " ".join(scale)))
         unk_50.append(unk_50_str)
         unk_58.append(unk_58_str)
-
-    skeleton_xml.unknown_50 = jenkhash.Generate(" ".join(unk_50))
-    skeleton_xml.unknown_54 = zlib.crc32(" ".join(unk_50).encode())
-    skeleton_xml.unknown_58 = zlib.crc32(" ".join(unk_58).encode())
+    if current_game == SollumzGame.GTA:
+        skeleton_xml.unknown_50 = jenkhash.Generate(" ".join(unk_50))
+        skeleton_xml.unknown_54 = zlib.crc32(" ".join(unk_50).encode())
+        skeleton_xml.unknown_58 = zlib.crc32(" ".join(unk_58).encode())
+    elif current_game == SollumzGame.RDR:
+        skeleton_xml.unknown_50 = str(jenkhash.Generate(" ".join(unk_50)))
+        skeleton_xml.unknown_54 = str(zlib.crc32(" ".join(unk_50).encode()))
+        skeleton_xml.unknown_58 = str(zlib.crc32(" ".join(unk_58).encode()))
 
 
 def get_bone_index(armature: bpy.types.Armature, bone: bpy.types.Bone) -> Optional[int]:

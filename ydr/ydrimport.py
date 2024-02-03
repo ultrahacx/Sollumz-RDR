@@ -198,7 +198,7 @@ def create_drawable_armature(drawable_xml: Drawable, name: str):
     if current_game == SollumzGame.GTA:
         create_joint_constraints(drawable_obj, drawable_xml.joints)
 
-    set_drawable_properties(drawable_obj, drawable_xml)
+    set_drawable_properties(drawable_obj, drawable_xml, True)
 
     return drawable_obj
 
@@ -503,11 +503,16 @@ def create_drawable_lights(drawable_xml: Drawable, drawable_obj: bpy.types.Objec
     lights.parent = drawable_obj
 
 
-def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
+def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable, armature: bool = False):
     obj.drawable_properties.lod_dist_high = drawable_xml.lod_dist_high
     obj.drawable_properties.lod_dist_med = drawable_xml.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable_xml.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable_xml.lod_dist_vlow
+    if current_game == SollumzGame.RDR and armature:
+        print("Setting extra properties for armature:",obj, drawable_xml.skeleton.unknown_24)
+        obj.drawable_properties.unknown_24 = drawable_xml.skeleton.unknown_24
+        obj.drawable_properties.unknown_60 = drawable_xml.skeleton.unknown_60
+        obj.drawable_properties.parent_bone_tag = drawable_xml.skeleton.parent_bone_tag
     # obj.drawable_properties.unknown_9A = drawable_xml.unknown_9A
 
 

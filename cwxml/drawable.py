@@ -439,21 +439,23 @@ class Bone(ElementTree):
 
     def __init__(self):
         super().__init__()
+        # make enum in the future with all of the specific bone names?
+        self.name = TextProperty("Name", "")
+        self.tag = ValueProperty("Tag", 0)
+        self.flags = FlagsProperty("Flags")
+        self.index = ValueProperty("Index", 0)
+        # by default if a bone don't have parent or sibling there should be -1 instead of 0
+        self.parent_index = ValueProperty("ParentIndex", -1)
+
         if current_game == SollumzGame.GTA:
             self.sibling_index = ValueProperty("SiblingIndex", -1)
             self.transform_unk = QuaternionProperty("TransformUnk")
             self.translation = VectorProperty("Translation")
         elif current_game == SollumzGame.RDR:
-            self.next_sibling_index = ValueProperty("NextSiblingIndex", -1)
+            self.sibling_index = ValueProperty("NextSiblingIndex", -1)
             self.last_sibling_index = ValueProperty("LastSiblingIndex", -1)
             self.translation = VectorProperty("Position")
-        # make enum in the future with all of the specific bone names?
-        self.name = TextProperty("Name", "")
-        self.tag = ValueProperty("Tag", 0)
-        self.index = ValueProperty("Index", 0)
-        # by default if a bone don't have parent or sibling there should be -1 instead of 0
-        self.parent_index = ValueProperty("ParentIndex", -1)
-        self.flags = FlagsProperty("Flags")
+
         self.rotation = QuaternionProperty("Rotation")
         self.scale = VectorProperty("Scale")
         
@@ -493,7 +495,7 @@ class Skeleton(ElementTree):
             self.unknown_54 = TextProperty("Unknown_54", "JcfuiBB_0x89E74EEE")
             self.unknown_58 = TextProperty("Unknown_58", "IdlqQAA_0x825CEBDD")
             self.unknown_60 = ValueProperty("Unknown_60", 257)
-            self.parent_bone_tag = ValueProperty("ParentBoneTag", 21030)
+            self.parent_bone_tag = ValueProperty("ParentBoneTag", 0)
         self.bones = BonesList("Bones")
 
 

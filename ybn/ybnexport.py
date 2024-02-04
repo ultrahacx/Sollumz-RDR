@@ -111,7 +111,6 @@ def create_composite_xml(
 
         if child_xml is None:
             continue
-        
         if out_child_obj_to_index is not None:
             out_child_obj_to_index[child] = len(composite_xml.children)
         composite_xml.children.append(child_xml)
@@ -185,7 +184,6 @@ def bound_geom_has_mats(geom_obj: bpy.types.Object):
 def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Initialize ``bound_xml`` bound child properties from object blender properties."""
     bound_xml.composite_transform = get_composite_transforms(obj).transposed()
-    
     if obj.type == "MESH":
         bbmin, bbmax = get_bound_extents(obj)
     elif obj.type == "EMPTY":

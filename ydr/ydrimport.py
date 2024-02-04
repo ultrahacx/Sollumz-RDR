@@ -18,6 +18,7 @@ from .mesh_builder import MeshBuilder
 from ..lods import LODLevels
 from .lights import create_light_objs
 from .properties import DrawableModelProperties
+from .render_bucket import RenderBucket
 from .. import logger
 
 
@@ -67,8 +68,8 @@ def create_drawable_obj(drawable_xml: Drawable, filepath: str, name: Optional[st
 
     parent_objs(model_objs, drawable_obj)
 
-    # if drawable_xml.lights:
-    #     create_drawable_lights(drawable_xml, drawable_obj, armature_obj)
+    if drawable_xml.lights:
+        create_drawable_lights(drawable_xml, drawable_obj, armature_obj)
 
     return drawable_obj
 
@@ -186,10 +187,8 @@ def set_lod_model_properties(model_objs: list[bpy.types.Object], drawable_xml: D
 
 
 def set_drawable_model_properties(model_props: DrawableModelProperties, model_xml: DrawableModel):
-    return
-    model_props.render_mask = model_xml.render_mask
-    model_props.unknown_1 = model_xml.unknown_1
-    model_props.flags = model_xml.flags
+    if current_game == SollumzGame.GTA:
+        model_props.render_mask = model_xml.render_mask
 
 
 def create_drawable_armature(drawable_xml: Drawable, name: str):
@@ -198,7 +197,7 @@ def create_drawable_armature(drawable_xml: Drawable, name: str):
     if current_game == SollumzGame.GTA:
         create_joint_constraints(drawable_obj, drawable_xml.joints)
 
-    set_drawable_properties(drawable_obj, drawable_xml)
+    set_drawable_properties(drawable_obj, drawable_xml, True)
 
     return drawable_obj
 
@@ -248,7 +247,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
             filename = f"{shader.name}.sps"
 
         material = create_shader(filename)
-        material.shader_properties.renderbucket = shader.render_bucket
+        material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
     elif current_game == SollumzGame.RDR:
         material = create_shader(shader.name, current_game)
 
@@ -503,11 +502,16 @@ def create_drawable_lights(drawable_xml: Drawable, drawable_obj: bpy.types.Objec
     lights.parent = drawable_obj
 
 
-def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable):
+def set_drawable_properties(obj: bpy.types.Object, drawable_xml: Drawable, armature: bool = False):
     obj.drawable_properties.lod_dist_high = drawable_xml.lod_dist_high
     obj.drawable_properties.lod_dist_med = drawable_xml.lod_dist_med
     obj.drawable_properties.lod_dist_low = drawable_xml.lod_dist_low
     obj.drawable_properties.lod_dist_vlow = drawable_xml.lod_dist_vlow
+    if current_game == SollumzGame.RDR and armature:
+        print("Setting extra properties for armature:",obj, drawable_xml.skeleton.unknown_24)
+        obj.drawable_properties.unknown_24 = drawable_xml.skeleton.unknown_24
+        obj.drawable_properties.unknown_60 = drawable_xml.skeleton.unknown_60
+        obj.drawable_properties.parent_bone_tag = drawable_xml.skeleton.parent_bone_tag
     # obj.drawable_properties.unknown_9A = drawable_xml.unknown_9A
 
 

@@ -74,15 +74,11 @@ class MeshBuilder:
         mesh.attributes["material_index"].data.foreach_set(
             "value", model_mat_inds[self.mat_inds])
 
-    def set_mesh_normals(self, mesh: bpy.types.Mesh, game: str):
+    def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
 
-        normals_normalized = []
-        for n in self.vertex_arr["Normal"]:
-            # Normalized normal vector is multiplied by -1 to invert normal due to CodeX bug
-            n = Vector(n).normalized()
-            normals_normalized.append(n)
-
+        normals_normalized = [Vector(n).normalized()
+                              for n in self.vertex_arr["Normal"]]
         mesh.normals_split_custom_set_from_vertices(normals_normalized)
 
         mesh.use_auto_smooth = True

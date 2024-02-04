@@ -12,7 +12,7 @@
       <SpotBlend value="0.9444444" />
       <TimeFlags value="15728703" />
       <Flags value="1408" />
-      <Flashiness value="0" />
+      <Flashiness>CONSTANT</Flashiness>
       <VolumeSizeScale value="1" />
       <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
       <VolumeOuterIntensity value="1" />
@@ -44,7 +44,7 @@
       <SpotBlend value="0" />
       <TimeFlags value="15728767" />
       <Flags value="0" />
-      <Flashiness value="0" />
+      <Flashiness>CONSTANT</Flashiness>
       <VolumeSizeScale value="1" />
       <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
       <VolumeOuterIntensity value="1" />
@@ -77,7 +77,7 @@
       <TimeFlags value="15728703" />
       <Flags value="384" />
       <ProjectedTextureHash>hash_A94A6095</ProjectedTextureHash>
-      <Flashiness value="0" />
+      <Flashiness>CONSTANT</Flashiness>
       <VolumeSizeScale value="1" />
       <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
       <VolumeOuterIntensity value="1" />
@@ -109,7 +109,7 @@
       <SpotBlend value="0" />
       <TimeFlags value="15728767" />
       <Flags value="2097152" />
-      <Flashiness value="0" />
+      <Flashiness>CONSTANT</Flashiness>
       <VolumeSizeScale value="1" />
       <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
       <VolumeOuterIntensity value="1" />
@@ -142,7 +142,7 @@
       <TimeFlags value="15728703" />
       <Flags value="384" />
       <ProjectedTextureHash>hash_249E51B0</ProjectedTextureHash>
-      <Flashiness value="0" />
+      <Flashiness>CONSTANT</Flashiness>
       <VolumeSizeScale value="1" />
       <VolumeOuterColor x="1.0" y="1.0" z="1.0" />
       <VolumeOuterIntensity value="1" />

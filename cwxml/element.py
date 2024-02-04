@@ -15,6 +15,7 @@ def remove_elements_with_no_attributes(elem):
             continue
         elem.remove(child)
 
+
 def indent(elem: ET.Element, level=0):
     """Custom indentation to get elements like <VerticesProperty /> to output nicely"""
     amount = "  "

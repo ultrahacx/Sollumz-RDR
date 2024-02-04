@@ -439,21 +439,23 @@ class Bone(ElementTree):
 
     def __init__(self):
         super().__init__()
+        # make enum in the future with all of the specific bone names?
+        self.name = TextProperty("Name", "")
+        self.tag = ValueProperty("Tag", 0)
+        self.flags = FlagsProperty("Flags")
+        self.index = ValueProperty("Index", 0)
+        # by default if a bone don't have parent or sibling there should be -1 instead of 0
+        self.parent_index = ValueProperty("ParentIndex", -1)
+
         if current_game == SollumzGame.GTA:
             self.sibling_index = ValueProperty("SiblingIndex", -1)
             self.transform_unk = QuaternionProperty("TransformUnk")
             self.translation = VectorProperty("Translation")
         elif current_game == SollumzGame.RDR:
-            self.next_sibling_index = ValueProperty("NextSiblingIndex", -1)
+            self.sibling_index = ValueProperty("NextSiblingIndex", -1)
             self.last_sibling_index = ValueProperty("LastSiblingIndex", -1)
             self.translation = VectorProperty("Position")
-        # make enum in the future with all of the specific bone names?
-        self.name = TextProperty("Name", "")
-        self.tag = ValueProperty("Tag", 0)
-        self.index = ValueProperty("Index", 0)
-        # by default if a bone don't have parent or sibling there should be -1 instead of 0
-        self.parent_index = ValueProperty("ParentIndex", -1)
-        self.flags = FlagsProperty("Flags")
+
         self.rotation = QuaternionProperty("Rotation")
         self.scale = VectorProperty("Scale")
         
@@ -493,7 +495,7 @@ class Skeleton(ElementTree):
             self.unknown_54 = TextProperty("Unknown_54", "JcfuiBB_0x89E74EEE")
             self.unknown_58 = TextProperty("Unknown_58", "IdlqQAA_0x825CEBDD")
             self.unknown_60 = ValueProperty("Unknown_60", 257)
-            self.parent_bone_tag = ValueProperty("ParentBoneTag", 21030)
+            self.parent_bone_tag = ValueProperty("ParentBoneTag", 0)
         self.bones = BonesList("Bones")
 
 
@@ -552,8 +554,6 @@ class Light(ElementTree):
         self.falloff_exponent = ValueProperty("FalloffExponent")
         self.culling_plane_normal = VectorProperty("CullingPlaneNormal")
         self.culling_plane_offset = ValueProperty("CullingPlaneOffset")
-        self.unknown_45 = ValueProperty("Unknown45")
-        self.unknown_46 = ValueProperty("Unknown46")
         self.volume_intensity = ValueProperty("VolumeIntensity")
         self.volume_size_scale = ValueProperty("VolumeSizeScale")
         self.volume_outer_color = ColorProperty("VolumeOuterColour")
@@ -600,6 +600,7 @@ class VertexLayoutList(ElementProperty):
 
     def to_xml(self):
         element = ET.Element(self.tag_name)
+        element.set("type", self.type)
         for item in self.value:
             element.append(ET.Element(item))
         return element
@@ -786,8 +787,7 @@ class DrawableModel(ElementTree):
         
         if current_game == SollumzGame.GTA:
             self.render_mask = ValueProperty("RenderMask", 0)
-            # self.bone_index = ValueProperty("BoneIndex", 0)
-            self.unknown_1 = ValueProperty("Unknown1", 0)
+            self.matrix_count = ValueProperty("Unknown1", 0)
         elif current_game == SollumzGame.RDR:
             self.bone_count = ValueProperty("BonesCount", 0)
             self.bone_mapping = BoneMappingProperty("BoneMapping")
@@ -856,7 +856,6 @@ class Drawable(ElementTree, AbstractClass):
         self.skeleton = Skeleton()
 
         if current_game == SollumzGame.GTA: 
-            self.unknown_9A = ValueProperty("Unknown9A", 0)
             self.joints = Joints()
             self.drawable_models_high = DrawableModelList(
                 "DrawableModelsHigh")

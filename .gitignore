@@ -2,11 +2,8 @@ __pycache__
 *.pyc
 .cache
 tmp
-*.blend
-*.blend1
 .vscode
 .venv
-*.dds
 load_submodules
 vsdevelopment.code-workspace
 .idea

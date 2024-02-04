@@ -4,6 +4,7 @@ from . import operators as ydr_ops
 from .shader_materials import shadermats, rdr_shadermats
 from ..sollumz_ui import SOLLUMZ_PT_OBJECT_PANEL, SOLLUMZ_PT_MAT_PANEL
 from ..sollumz_properties import SollumType, MaterialType, LightType, SOLLUMZ_UI_NAMES, SollumzGame
+from ..cwxml.shader import ShaderManager
 from ..sollumz_ui import FlagsPanel, TimeFlagsPanel
 from ..sollumz_helper import find_sollumz_parent
 from ..icons import icon_manager
@@ -28,11 +29,17 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
         layout.use_property_split = True
 
         obj = context.active_object
+        drawable_props = obj.drawable_properties
 
-        layout.prop(obj.drawable_properties, "lod_dist_high")
-        layout.prop(obj.drawable_properties, "lod_dist_med")
-        layout.prop(obj.drawable_properties, "lod_dist_low")
-        layout.prop(obj.drawable_properties, "lod_dist_vlow")
+        layout.prop(drawable_props, "lod_dist_high", text="Lod Distance High")
+        layout.prop(drawable_props, "lod_dist_med", text="Med")
+        layout.prop(drawable_props, "lod_dist_low", text="Low")
+        layout.prop(drawable_props, "lod_dist_vlow", text="VLow")
+
+        if obj.sollum_game_type == SollumzGame.RDR and obj.type == "ARMATURE":
+            layout.prop(drawable_props, "unknown_24")
+            layout.prop(drawable_props, "unknown_60")
+            layout.prop(drawable_props, "parent_bone_tag")
 
         if obj.sollum_game_type == SollumzGame.RDR and obj.type == "ARMATURE":
             print(dir(obj.drawable_properties))
@@ -174,46 +181,86 @@ class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
         if aobj.sollum_type != SollumType.LIGHT:
             row = layout.row()
             row.prop(aobj, "sollum_type")
-            layout.label(text="No Sollumz light in scene selected.", icon="ERROR")
+            layout.label(text="No Sollumz light in the scene selected.", icon="ERROR")
             return
 
         light = context.light
+
         row = layout.row()
         row.enabled = light.sollum_type != LightType.NONE
         row.prop(light, "sollum_type")
-        if light.sollum_type == LightType.NONE:
-            return
-        layout.separator()
-        layout.prop(light.light_properties, "light_hash")
-        layout.prop(light.light_properties, "group_id")
-        layout.prop(light.light_properties, "projected_texture_hash")
-        layout.separator()
-        layout.prop(light.light_properties, "flashiness")
-        if light.sollum_type == LightType.CAPSULE:
+
+        if light.sollum_type != LightType.NONE:
             layout.separator()
-            layout.prop(light.light_properties, "extent")
-        layout.separator()
-        layout.prop(light.light_properties, "volume_size_scale")
-        layout.prop(light.light_properties, "volume_outer_color")
-        layout.prop(light.light_properties, "volume_outer_intensity")
-        layout.prop(light.light_properties, "volume_outer_exponent")
-        layout.separator()
-        layout.prop(light.light_properties, "light_fade_distance")
-        layout.prop(light.light_properties, "shadow_fade_distance")
-        layout.prop(light.light_properties, "specular_fade_distance")
-        layout.prop(light.light_properties, "volumetric_fade_distance")
-        layout.separator()
-        layout.prop(light.light_properties, "culling_plane_normal")
-        layout.prop(light.light_properties, "culling_plane_offset")
-        layout.separator()
-        layout.prop(light.light_properties, "corona_size")
-        layout.prop(light.light_properties, "corona_intensity")
-        layout.prop(light.light_properties, "corona_z_bias")
-        layout.separator()
-        layout.prop(light.light_properties, "unknown_45")
-        layout.prop(light.light_properties, "unknown_46")
-        layout.separator()
-        layout.prop(light.light_properties, "shadow_blur")
+
+            box = layout.box()
+            box.label(text="General Properties")
+            box.prop(light, "color")
+            box.prop(light, "energy", text="Intensity")
+            box.prop(light, "cutoff_distance", text="Falloff")
+            box.prop(light, "shadow_soft_size", text="Falloff Exponent")
+            box.prop(light, "shadow_buffer_clip_start", text="Shadow Near Clip")
+
+            # Extra Properties
+            match light.sollum_type:
+                case LightType.SPOT:
+                    box = layout.box()
+                    box.label(text="Spot Properties")
+                    box.prop(light, "spot_size", text="Cone Outer Angle")
+                    box.prop(light, "spot_blend",text="Cone Inner Angle")
+                case LightType.CAPSULE:
+                    box = layout.box()
+                    box.label(text="Capsule Properties")
+                    box.prop(light.light_properties, "extent", index=0)
+
+            # Misc Properties
+            box = layout.box()
+            box.label(text="Misc Properties")
+            box.prop(light.light_properties, "light_hash")
+            box.prop(light.light_properties, "group_id")
+            box.prop(light.light_properties, "projected_texture_hash")
+            box.prop(light.light_properties, "flashiness")
+
+            # Volume properties
+            box = layout.box()
+            box.label(text="Volume Properties", icon="MOD_EXPLODE")
+            box.prop(light, "volume_factor", text="Volume Intensity")
+            box.prop(light.light_properties, "volume_size_scale")
+            box.prop(light.light_properties, "volume_outer_color")
+            box.prop(light.light_properties, "volume_outer_intensity")
+            box.prop(light.light_properties, "volume_outer_exponent")
+
+            # Distance properties
+            box = layout.box()
+            box.label(text="Distance Properties", icon="DRIVER_DISTANCE")
+            box.prop(light.light_properties, "light_fade_distance")
+            box.prop(light.light_properties, "shadow_fade_distance")
+            box.prop(light.light_properties, "specular_fade_distance")
+            box.prop(light.light_properties, "volumetric_fade_distance")
+
+            # Culling Plane
+            box = layout.box()
+            row = box.row()
+            row.use_property_split = False
+            row.use_property_decorate = False
+            row.prop(light.light_flags, "enable_culling_plane", text="")
+            row.label(text="Culling Plane")
+            col = box.column()
+            col.active = light.light_flags.enable_culling_plane
+            col.prop(light.light_properties, "culling_plane_normal", text="Normal")
+            col.prop(light.light_properties, "culling_plane_offset", text="Offset")
+
+            # Corona Properties
+            box = layout.box()
+            box.label(text="Corona Properties", icon="LIGHT_SUN")
+            box.prop(light.light_properties, "corona_size")
+            box.prop(light.light_properties, "corona_intensity")
+            box.prop(light.light_properties, "corona_z_bias")
+
+            # Advanced Properties
+            box = layout.box()
+            box.label(text="Advanced Properties", icon="TOOL_SETTINGS")
+            box.prop(light.light_properties, "shadow_blur")
 
 
 class SOLLUMZ_PT_LIGHT_TIME_FLAGS_PANEL(TimeFlagsPanel, bpy.types.Panel):
@@ -531,6 +578,18 @@ class SOLLUMZ_PT_SHADER_PANEL(bpy.types.Panel):
         row.prop(mat.shader_properties, "name")
 
 
+def collect_parameter_nodes(mat: bpy.types.Material, filter_func) -> list[bpy.types.Node]:
+    """Filters nodes from ``mat`` and sorts them based on ``ShaderDef.parameter_ui_order``."""
+    shader = ShaderManager.find_shader(mat.shader_properties.filename)
+
+    nodes = [n for n in mat.node_tree.nodes if filter_func(n)]
+    if shader is not None:
+        # order changes when the active node changes, sort so the UI stays stable
+        nodes = sorted(nodes, key=lambda n: shader.parameter_ui_order.get(n.name, -1))
+
+    return nodes
+
+
 class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
     bl_label = "Texture Parameters"
     bl_idname = "SOLLUMZ_PT_TXTPARAMS_PANEL"
@@ -555,28 +614,22 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
         if mat is None:
             return
 
-        nodes = mat.node_tree.nodes
+        nodes = collect_parameter_nodes(mat, lambda n: isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz)
         for n in nodes:
-            if isinstance(n, bpy.types.ShaderNodeTexImage) and n.is_sollumz:
-                box = layout.box()
-                row = box.row(align=True)
-                row.label(text="Texture Type: " + n.name)
-                row.label(text="Texture Name: " + n.sollumz_texture_name)
+            SPLIT_FACTOR = 0.2
+            split = layout.split(factor=SPLIT_FACTOR)
+            split.alignment = "RIGHT"
+            split.label(text=n.name)
+            split.template_ID(n, "image", open="image.open")
 
-                if n.image:
-                    row = box.row()
-                    row.prop(n.image, "filepath", text="Texture Path")
-                    row = box.row()
-                    row.prop(n.texture_properties, "embedded")
-                    row = box.row()
-                    row.prop(n.texture_properties, "extra_flags")
-                    row.enabled = n.image.filepath != ""
-                else:
-                    row = box.row()
-                    row.label(
-                        text="Image Texture has no linked image.", icon="ERROR")
-
-                box.prop(n.texture_properties, "usage")
+            if n.image is not None:
+                split = layout.split(factor=SPLIT_FACTOR)  # split to align the props with the image selector
+                _ = split.row()
+                row = split.row()
+                row.enabled = n.image.filepath != ""
+                row.prop(n.texture_properties, "embedded")
+                row.prop(n.texture_properties, "extra_flags")
+                row.prop(n.image.colorspace_settings, "name", text="Color Space")
 
 
 class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
@@ -603,10 +656,9 @@ class SOLLUMZ_PT_VALUEPARAMS_PANEL(bpy.types.Panel):
         if mat is None:
             return
 
-        nodes = mat.node_tree.nodes
-        for n in nodes:  # LOOP SERERATE SO TEXTURES SHOW ABOVE VALUE PARAMS
-            if isinstance(n, SzShaderNodeParameter):
-                n.draw(context, layout, label=n.name, compact=True)
+        nodes = collect_parameter_nodes(mat, lambda n: isinstance(n, SzShaderNodeParameter))
+        for n in nodes:
+            n.draw(context, layout, label=n.name, compact=True)
 
 
 class SOLLUMZ_PT_CHILD_OF_SUBPANEL(bpy.types.Panel):

@@ -6,11 +6,13 @@ from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel, SollumzGame, MapEntityType
 from ..tools import jenkhash
 from ..tools.meshhelper import get_combined_bound_box, get_bound_center_from_bounds, get_sphere_radius
-from .properties.ytyp import ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
+from .properties.ytyp import ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties
+from ..ydr.light_flashiness import Flashiness
 from ..cwxml import ytyp
 
 current_game = SollumzGame.GTA
+
 
 def set_room_attached_objects(room_xml: ytypxml.Room, room_index: int, entities: Iterable[MloEntityProperties]):
     """Set attached objects of room from the mlo archetype entities collection provided."""
@@ -178,7 +180,13 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
     extension_xml.offset_position = Vector(
         extension_properties.offset_position)
 
+    ignored_props = getattr(extension_properties.__class__, "ignored_in_import_export", None) # see LightShaftExtensionProperties
+
     for prop_name in extension_properties.__class__.__annotations__:
+        if ignored_props is not None and prop_name in ignored_props:
+            continue
+
+        # TODO: this check doesn't work as intended, `hasattr` with XML classes always returns true for some reason
         if not hasattr(extension_xml, prop_name):
             # Unknown prop name. Need warning
             print(
@@ -190,7 +198,7 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
         if isinstance(prop_value, Euler):
             prop_value = prop_value.to_quaternion()
 
-        if prop_name == "effect_hash":
+        elif prop_name == "effect_hash":
             # `effectHash` needs a hash as decimal value
             prop_value = prop_value.strip()
             if prop_value == "":
@@ -200,6 +208,10 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
                 # Otherwise, get a hash from the string
                 prop_value_hash = jenkhash.name_to_hash(prop_value)
                 prop_value = str(prop_value_hash)
+
+        elif prop_name == "flashiness":
+            # convert enum back to int
+            prop_value = Flashiness[prop_value].value
 
         setattr(extension_xml, prop_name, prop_value)
 
@@ -322,6 +334,7 @@ def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool 
 
     if archetype.type == ArchetypeType.MLO:
         archetype_xml = ytypxml.MloArchetype()
+        archetype_xml.mlo_flags = archetype.mlo_flags.total
         create_mlo_archetype_children_xml(archetype, archetype_xml)
     else:
         if archetype.type == ArchetypeType.TIME:
@@ -335,7 +348,7 @@ def create_archetype_xml(archetype: ArchetypeProperties, apply_transforms: bool 
         archetype_xml.load_flags = archetype.load_flags
     archetype_xml.lod_dist = archetype.lod_dist
     archetype_xml.flags = archetype.flags.total
-    archetype_xml.special_attribute = archetype.special_attribute
+    archetype_xml.special_attribute = SpecialAttribute[archetype.special_attribute].value
     archetype_xml.hd_texture_dist = archetype.hd_texture_dist
     archetype_xml.name = archetype.name.lower()
     archetype_xml.texture_dictionary = archetype.texture_dictionary.lower()

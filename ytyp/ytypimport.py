@@ -5,10 +5,12 @@ from mathutils import Vector, Quaternion
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel, SollumzGame, MapEntityType
-from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
+from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, SpecialAttribute, TimecycleModifierProperties, RoomProperties, PortalProperties, MloEntityProperties, EntitySetProperties
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
+from ..ydr.light_flashiness import Flashiness
 
 current_game = SollumzGame.GTA
+
 
 def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties):
     """Create an mlo entity sets from an xml for the provided archetype data-block."""
@@ -155,7 +157,13 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
 
     extension_properties.offset_position = extension_xml.offset_position
 
+    ignored_props = getattr(extension_properties.__class__, "ignored_in_import_export", None) # see LightShaftExtensionProperties
+
     for prop_name in extension_properties.__class__.__annotations__:
+        if ignored_props is not None and prop_name in ignored_props:
+            continue
+
+        # TODO: this check doesn't work as intended, `hasattr` with XML classes always returns true for some reason
         if not hasattr(extension_xml, prop_name):
             # Unknown prop name. Need warning
             print(
@@ -170,7 +178,7 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
         if isinstance(prop_value, Quaternion):
             prop_value = prop_value.to_euler()
 
-        if prop_name == "effect_hash":
+        elif prop_name == "effect_hash":
             # `effectHash` is stored as decimal value.
             # Convert to `hash_` string or empty string for 0
             try:
@@ -178,6 +186,10 @@ def set_extension_props(extension_xml: ymapxml.Extension, extension: ExtensionPr
             except ValueError:
                 prop_value_int = 0
             prop_value = f"hash_{prop_value_int:08X}" if prop_value_int != 0 else ""
+
+        elif prop_name == "flashiness":
+            # `flashiness` is now an enum property, we need the enum as string
+            prop_value = Flashiness(prop_value).name
 
 
         setattr(extension_properties, prop_name, prop_value)
@@ -269,7 +281,7 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
 
     archetype.name = archetype_xml.name
     archetype.flags.total = str(archetype_xml.flags)
-    archetype.special_attribute = archetype_xml.special_attribute
+    archetype.special_attribute = SpecialAttribute(archetype_xml.special_attribute).name
     archetype.hd_texture_dist = archetype_xml.hd_texture_dist
     archetype.texture_dictionary = archetype_xml.texture_dictionary
     archetype.clip_dictionary = archetype_xml.clip_dictionary

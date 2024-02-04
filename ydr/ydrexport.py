@@ -55,6 +55,7 @@ from ..sollumz_properties import (
 from ..sollumz_preferences import get_export_settings
 from ..ybn.ybnexport import create_composite_xml, create_bound_xml
 from .properties import get_model_properties
+from .render_bucket import RenderBucket
 from .vertex_buffer_builder import VertexBufferBuilder, dedupe_and_get_indices, remove_arr_field, remove_unused_colors, get_bone_by_vgroup, remove_unused_uvs
 from .lights import create_xml_lights
 from ..cwxml.shader import ShaderManager, ShaderDef, ShaderParameterCBufferDef, ShaderParameterFloatVectorDef, ShaderParameterSamplerDef, ShaderParameterType
@@ -245,14 +246,18 @@ def get_model_bone_index(model_obj: bpy.types.Object):
     return bone_index if bone_index != -1 else 0
 
 
-def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel, model_xml: DrawableModel):
+def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel,bones: Optional[list[bpy.types.Bone]], model_xml: DrawableModel):
     """Set ``DrawableModel`` properties for each lod in ``model_obj``"""
     model_props = get_model_properties(model_obj, lod_level)
     if current_game == SollumzGame.GTA:
         model_xml.render_mask = model_props.render_mask
-        model_xml.unknown_1 = model_props.unknown_1
+        model_xml.matrix_count = 0
     model_xml.flags = model_props.flags
-    model_xml.has_skin = 1 if model_obj.vertex_groups else 0
+    model_xml.has_skin = 1 if bones and model_obj.vertex_groups else 0
+    
+    if model_xml.has_skin:
+        model_xml.flags = 1  # skin flag, same meaning as has_skin
+        model_xml.matrix_count = len(bones)
 
 
 def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
@@ -507,7 +512,7 @@ def join_skinned_models(model_xmls: list[DrawableModel]):
     skinned_model = DrawableModel()
     skinned_model.has_skin = 1
     skinned_model.render_mask = skinned_models[0].render_mask
-    skinned_model.unknown_1 = skinned_models[0].unknown_1
+    skinned_model.matrix_count = skinned_models[0].matrix_count
     skinned_model.flags = skinned_models[0].flags
 
     geoms_by_shader: dict[int, list[Geometry]] = defaultdict(list)
@@ -1051,8 +1056,6 @@ def set_drawable_xml_properties(drawable_obj: bpy.types.Object, drawable_xml: Dr
     drawable_xml.lod_dist_med = drawable_obj.drawable_properties.lod_dist_med
     drawable_xml.lod_dist_low = drawable_obj.drawable_properties.lod_dist_low
     drawable_xml.lod_dist_vlow = drawable_obj.drawable_properties.lod_dist_vlow
-    if current_game == SollumzGame.GTA:
-        drawable_xml.unknown_9A = drawable_obj.drawable_properties.unknown_9A
 
 
 def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
@@ -1067,14 +1070,12 @@ def write_embedded_textures(drawable_obj: bpy.types.Object, filepath: str):
         if os.path.isfile(texture_path):
             if not os.path.isdir(folder_path):
                 os.mkdir(folder_path)
-            dstpath = folder_path + "\\" + \
-                os.path.basename(texture_path)
-            # check if paths are the same because if they are no need to copy
-            if texture_path != dstpath:
+            dstpath = os.path.join(folder_path, os.path.basename(texture_path))
+            # check if paths are the same because if they are, no need to copy (and would throw an error otherwise)
+            if not os.path.exists(dstpath) or not os.path.samefile(texture_path, dstpath):
                 shutil.copyfile(texture_path, dstpath)
         elif texture_path:
-            logger.warning(
-                f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
+            logger.warning(f"Texture path '{texture_path}' for {node.name} not found! Skipping texture...")
 
 
 def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> list[ShaderParameter]:
@@ -1146,7 +1147,7 @@ def get_shaders_from_blender(materials):
         shader.name = material.shader_properties.name
         if current_game == SollumzGame.GTA:
             shader.filename = material.shader_properties.filename
-            shader.render_bucket = material.shader_properties.renderbucket
+            shader.render_bucket = RenderBucket[material.shader_properties.renderbucket].value
             shader_def = ShaderManager.find_shader(shader.filename)
             shader.parameters = create_shader_parameters_list_template(shader_def)
         elif current_game == SollumzGame.RDR:

@@ -47,7 +47,7 @@ class MeshBuilder:
         self.create_mesh_materials(mesh)
 
         if self._has_normals:
-            self.set_mesh_normals(mesh, game)
+            self.set_mesh_normals(mesh)
 
         if self._has_uvs:
             self.set_mesh_uvs(mesh)

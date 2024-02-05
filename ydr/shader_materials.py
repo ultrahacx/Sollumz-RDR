@@ -1,5 +1,6 @@
 from typing import Optional, NamedTuple
 import bpy
+from .render_bucket import RenderBucket
 from ..cwxml.shader import (
     ShaderManager,
     ShaderParameterType,
@@ -551,12 +552,12 @@ def create_shader(filename: str, game: SollumzGame = SollumzGame.GTA):
     mat.shader_properties.name = base_name
     mat.shader_properties.filename = filename
     if game == SollumzGame.GTA:
-        mat.shader_properties.renderbucket = shader.render_bucket
+        mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
     elif game == SollumzGame.RDR:
         if isinstance(shader.render_bucket, int):
-            mat.shader_properties.renderbucket = shader.render_bucket
+            mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
         else:
-            mat.shader_properties.renderbucket = shader.render_bucket[0]
+            mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket[0]).name
 
     bsdf, material_output = find_bsdf_and_material_output(mat)
     assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"

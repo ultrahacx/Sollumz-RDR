@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import Union
 import bpy
 from ...tools.blenderhelper import get_children_recursive

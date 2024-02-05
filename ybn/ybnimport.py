@@ -115,7 +115,8 @@ def create_bound_child_mesh(bound_xml: BoundChild, sollum_type: SollumType, mesh
 
     set_bound_col_material_properties(bound_xml, mat)
     obj.data.materials.append(mat)
-    obj.bound_properties.unk_11h = bound_xml.unk_11h
+    if current_game == SollumzGame.RDR:
+        obj.bound_properties.unk_11h = bound_xml.unk_11h
 
     set_bound_child_properties(bound_xml, obj)
 

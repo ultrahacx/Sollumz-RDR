@@ -198,7 +198,7 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     elif current_game == SollumzGame.RDR:
         model_xml = DrawableModel()
 
-    set_model_xml_properties(model_obj, lod_level, model_xml)
+    set_model_xml_properties(model_obj, lod_level, bones, model_xml)
 
     obj_eval = get_evaluated_obj(model_obj)
     mesh_eval = obj_eval.to_mesh()

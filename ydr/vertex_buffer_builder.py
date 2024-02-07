@@ -1,5 +1,5 @@
-from Sollumz.cwxml.drawable_RDR import VERT_ATTR_DTYPES
-from Sollumz.sollumz_properties import SollumzGame
+from ..cwxml.drawable_RDR import VERT_ATTR_DTYPES
+from ..sollumz_properties import SollumzGame
 import bpy
 import numpy as np
 from numpy.typing import NDArray
@@ -86,19 +86,21 @@ class VertexBufferBuilder:
 
         mesh_attrs["Position"] = self._get_positions()
 
+        mesh_attrs["Normal"] = self._get_normals()
+
+        mesh_attrs["Tangent"] = self._get_tangents()
+
         if self._has_weights:
             
             data = self._get_weights_indices()
 
             mesh_attrs["BlendWeights"] = data[0]
+            if current_game == SollumzGame.RDR:
+                mesh_attrs["BlendWeights1"] = data[2]
+            
             mesh_attrs["BlendIndices"] = data[1]
             if current_game == SollumzGame.RDR:
-                mesh_attrs["BlendWeights2"] = data[2]
-                mesh_attrs["BlendIndices2"] = data[3]
-
-        mesh_attrs["Normal"] = self._get_normals()
-
-        mesh_attrs["Tangent"] = self._get_tangents()
+                mesh_attrs["BlendIndices1"] = data[3]
 
         if current_game == SollumzGame.RDR:
             mesh_attrs["Tangent1"] = mesh_attrs["Tangent"].copy()
@@ -155,6 +157,7 @@ class VertexBufferBuilder:
         """Get all BlendWeights and BlendIndices."""
         num_verts = len(self.mesh.vertices)
         bone_by_vgroup = self._bone_by_vgroup
+        print("Total bone_by_vgroup during build is:", bone_by_vgroup)
 
         ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
         weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
@@ -163,13 +166,21 @@ class VertexBufferBuilder:
         weights_arr2 = np.zeros((num_verts, 4), dtype=np.float32)
 
         for i, vert in enumerate(self.mesh.vertices):
+            extra_weight_index = 0
             for j, grp in enumerate(vert.groups):
                 if j < 4:
                     weights_arr[i][j] = grp.weight
-                    ind_arr[i][j] = bone_by_vgroup[grp.group]
+                    if current_game == SollumzGame.GTA:
+                        ind_arr[i][j] = bone_by_vgroup[grp.group]
+                    elif current_game == SollumzGame.RDR:
+                        ind_arr[i][j] = grp.group
                 elif j >= 4 and j < 8:
-                    weights_arr2[i][j] = grp.weight
-                    ind_arr2[i][j] = bone_by_vgroup[grp.group]
+                    weights_arr2[i][extra_weight_index] = grp.weight
+                    if current_game == SollumzGame.GTA:
+                        ind_arr2[i][extra_weight_index] = bone_by_vgroup[grp.group]
+                    elif current_game == SollumzGame.RDR:
+                        ind_arr2[i][extra_weight_index] = grp.group
+                    extra_weight_index += 1
                 else:
                     break
 

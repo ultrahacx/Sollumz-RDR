@@ -22,6 +22,7 @@ class ModelData(NamedTuple):
     # Used for storing drawable model properties
     xml_lods: dict[LODLevel, DrawableModel]
     bone_index: int
+    bone_mapping: dict[LODLevel, list]
 
 
 def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
@@ -31,6 +32,10 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
     model_datas: list[ModelData] = []
     model_xmls, bone_inds = get_lod_model_xmls(drawable_xml)
     for model_lods, bone_ind in zip(model_xmls, bone_inds):
+        if current_game == SollumzGame.RDR:
+            mapping = {lod_level: model_xml.bone_mapping for lod_level, model_xml in model_lods.items()}
+        else:
+            mapping = None
         model_data = ModelData(
             mesh_data_lods={
                 lod_level: mesh_data_from_xml(model_xml) for lod_level, model_xml in model_lods.items()
@@ -38,7 +43,8 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
             xml_lods={
                 lod_level: model_xml for lod_level, model_xml in model_lods.items()
             },
-            bone_index=bone_ind
+            bone_index=bone_ind,
+            bone_mapping=mapping
         )
 
         model_datas.append(model_data)

@@ -20,6 +20,8 @@ def import_ydd(filepath: str):
     
     global current_game
     current_game = ydd_xml.game
+    print("Reading YDD as game:", ydd_xml.game)
+    print("YDD data:", dir(ydd_xml))
 
     if import_settings.import_ext_skeleton:
         skel_yft = load_external_skeleton(filepath)
@@ -77,7 +79,7 @@ def create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, external
 def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str):
 
     name = get_filename(filepath)
-    dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name)
+    dict_obj = create_empty_object(SollumType.DRAWABLE_DICTIONARY, name, current_game)
 
     ydd_xml_list = ydd_xml
     if current_game == SollumzGame.RDR:

@@ -83,13 +83,10 @@ class BoneMappingProperty(ElementProperty):
             if len(text) > 0:
                 for line in text:
                     items = line.strip().split("   ")
-                    vert = []
                     for item in items:
                         words = item.strip().split(" ")
-                        # Convert item to correct type
                         item = [get_str_type(word) for word in words]
-                        vert.append(item)
-                    new.value.append(vert)
+                        new.value.extend(item)
         return new
     
     def to_xml(self):

@@ -938,6 +938,7 @@ class RDR2DrawableDictionary(ElementTree, AbstractClass):
     def __init__(self) -> None:
         super().__init__()
         self.game = current_game
+        self.version = AttributeProperty("version", 1)
         self.drawables = []
 
     @classmethod
@@ -952,6 +953,21 @@ class RDR2DrawableDictionary(ElementTree, AbstractClass):
                 drawable.tag_name = "Drawable"
                 new.drawables.append(drawable)
         return new
+    
+    def to_xml(self):
+        element = ET.Element(self.tag_name)
+        element.set("version", str(self.version))
+        subelement = ET.Element("Drawables")
+        element.append(subelement)
+        for drawable in self.drawables:
+            if isinstance(drawable, Drawable):
+                drawable.tag_name = "Item"
+                subelement.append(drawable.to_xml())
+            else:
+                raise TypeError(
+                    f"{type(self).__name__}s can only hold '{Drawable.__name__}' objects, not '{type(drawable)}'!")
+
+        return element
 
 
 class DrawableDictionary(MutableSequence, Element):

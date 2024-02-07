@@ -86,11 +86,15 @@ def create_rigged_drawable_models(drawable_xml: Drawable, materials: list[bpy.ty
         drawable_xml) if not split_by_group else get_model_data_split_by_group(drawable_xml)
 
     set_skinned_model_properties(drawable_obj, drawable_xml)
+    models = []
+    for model_data in model_datas:
+        model = create_rigged_model_obj(model_data, materials, armature_obj)
+        models.append(model)
 
-    return [create_rigged_model_obj(model_data, materials, armature_obj) for model_data in model_datas]
+    return models
 
 
-def create_model_obj(model_data: ModelData, materials: list[bpy.types.Material], name: str, bones: Optional[list[bpy.types.Bone]] = None):
+def create_model_obj(model_data: ModelData, materials: list[bpy.types.Material], name: str, bones: Optional[list[bpy.types.Bone]] = None, bone_mapping: list = None):
     model_obj = create_blender_object(SollumType.DRAWABLE_MODEL, name, None, current_game)
     create_lod_meshes(model_data, model_obj, materials, bones)
     create_tinted_shader_graph(model_obj)
@@ -145,8 +149,10 @@ def create_lod_meshes(model_data: ModelData, model_obj: bpy.types.Object, materi
         is_skinned = "BlendWeights" in mesh_data.vert_arr.dtype.names
 
         if is_skinned and bones is not None:
-            mesh_builder.create_vertex_groups(model_obj, bones)
-
+            bonemapping = None
+            if current_game == SollumzGame.RDR:
+                bonemapping = model_data.bone_mapping[lod_level]
+            mesh_builder.create_vertex_groups(model_obj, bones, current_game, bonemapping)
     lod_levels.set_highest_lod_active()
 
     # Original mesh no longer used since the obj is managed by LODs, so delete it

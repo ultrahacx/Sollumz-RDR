@@ -1,10 +1,12 @@
 import bpy
-from ..cwxml.drawable import DrawableDictionary
+from ..cwxml.drawable import DrawableDictionary, RDR2DrawableDictionary
 from ..ydr.ydrexport import create_drawable_xml, write_embedded_textures
 from ..tools import jenkhash
-from ..sollumz_properties import SollumType
+from ..sollumz_properties import SollumType, SollumzGame
 from ..sollumz_preferences import get_export_settings
+from ..cwxml import drawable
 
+current_game = SollumzGame.GTA
 
 def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
@@ -18,7 +20,12 @@ def export_ydd(ydd_obj: bpy.types.Object, filepath: str) -> bool:
 
 
 def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
+    current_game = ydd_obj.sollum_game_type
+    drawable.current_game = current_game
+
     ydd_xml = DrawableDictionary()
+    if current_game == SollumzGame.RDR:
+        ydd_xml = RDR2DrawableDictionary()
 
     ydd_armature = find_ydd_armature(
         ydd_obj) if ydd_obj.type != "ARMATURE" else ydd_obj
@@ -37,9 +44,12 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
         if exclude_skeleton or child.type != "ARMATURE":
             drawable_xml.skeleton = None
 
-        ydd_xml.append(drawable_xml)
+        if current_game == SollumzGame.GTA:
+            ydd_xml.append(drawable_xml)
+        elif current_game == SollumzGame.RDR:
+            ydd_xml.drawables.append(drawable_xml)
 
-    ydd_xml.sort(key=get_hash)
+    # ydd_xml.sort(key=get_hash)
 
     return ydd_xml
 

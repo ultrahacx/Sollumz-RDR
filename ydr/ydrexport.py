@@ -207,11 +207,15 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     if transforms_to_apply is not None:
         mesh_eval.transform(transforms_to_apply)
 
-    geometries = create_geometries_xml(
+    geometries_data = create_geometries_xml(
         mesh_eval, materials, bones, model_obj.vertex_groups)
+    
+    geometries = geometries_data[0]
     model_xml.geometries = geometries
 
     if current_game == SollumzGame.RDR:
+        mapping = [bones[index].bone_properties.tag for index in geometries_data[1].values()]
+        model_xml.bone_mapping = mapping
         model_xml.bounding_box_max = get_max_vector_list(
             geom.bounding_box_max for geom in geometries)
         model_xml.bounding_box_min = get_min_vector_list(
@@ -362,7 +366,7 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
 
     geometries = sort_geoms_by_shader(geometries)
 
-    return geometries
+    return [geometries, bone_by_vgroup]
 
 
 def sort_geoms_by_shader(geometries: list[Geometry]):
@@ -472,7 +476,10 @@ def append_model_xml(drawable_xml: Drawable, model_xml: DrawableModel, lod_level
             drawable_xml.drawable_models_med.models.append(model_xml)
 
     elif lod_level == LODLevel.LOW:
-        drawable_xml.drawable_models_low.append(model_xml)
+        if current_game == SollumzGame.GTA:
+            drawable_xml.drawable_models_low.append(model_xml)
+        elif current_game == SollumzGame.RDR:
+            drawable_xml.drawable_models_low.models.append(model_xml)
 
     elif lod_level == LODLevel.VERYLOW:
         drawable_xml.drawable_models_vlow.append(model_xml)
@@ -1151,7 +1158,7 @@ def get_shaders_from_blender(materials):
             shader_def = ShaderManager.find_shader(shader.filename)
             shader.parameters = create_shader_parameters_list_template(shader_def)
         elif current_game == SollumzGame.RDR:
-            shader.draw_bucket = material.shader_properties.renderbucket
+            shader.draw_bucket = RenderBucket[material.shader_properties.renderbucket].value
             shader_def = ShaderManager.find_shader(shader.name, current_game)
             shader.parameters = RDRParameters()
             shader.parameters.buffer_size = ' '.join([str(elem) for elem in shader_def.buffer_size])

@@ -126,11 +126,17 @@ class MeshBuilder:
                 if bones and bone_index < len(bones):
                     bone_name = bones[bone_index].name
             elif current_game == SollumzGame.RDR:
+                if bone_index > len(bone_mapping):
+                    raise Exception(f"Unable to get bone mapping as index {bone_index} is out of range in {bone_mapping}")
                 tag = bone_mapping[bone_index]
                 bone = get_bone_by_tag(tag)
                 bone_name = bone.name
-
-            return obj.vertex_groups.new(name=bone_name)
+            
+            vgroup = obj.vertex_groups.get(bone_name)
+            if vgroup != None:
+                return vgroup
+            else:
+                return obj.vertex_groups.new(name=bone_name)
 
         def create_weights(weights, indices):
             for vert_ind, bone_inds in enumerate(indices):
@@ -146,7 +152,7 @@ class MeshBuilder:
                     vgroup = vertex_groups[bone_ind]
 
                     vgroup.add((vert_ind,), weight, "ADD")
-
+    
         weights = self.vertex_arr["BlendWeights"] / 255
         indices = self.vertex_arr["BlendIndices"]
         create_weights(weights, indices)

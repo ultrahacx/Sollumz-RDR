@@ -354,6 +354,7 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
                         semantic_text = semantic_text + str(semantic[1])
                         semantic_format = semantic_format + str(semantic[2])
                         break
+            geom_xml.bone_count = len(bone_by_vgroup)
             geom_xml.vertices = vert_buffer
             geom_xml.indices = ind_buffer
             geom_xml.vertex_layout = VertexLayout()

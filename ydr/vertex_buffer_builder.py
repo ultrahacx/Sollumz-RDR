@@ -157,7 +157,6 @@ class VertexBufferBuilder:
         """Get all BlendWeights and BlendIndices."""
         num_verts = len(self.mesh.vertices)
         bone_by_vgroup = self._bone_by_vgroup
-        print("Total bone_by_vgroup during build is:", bone_by_vgroup)
 
         ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
         weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
@@ -176,20 +175,18 @@ class VertexBufferBuilder:
                         ind_arr[i][j] = grp.group
                 elif j >= 4 and j < 8:
                     weights_arr2[i][extra_weight_index] = grp.weight
-                    if current_game == SollumzGame.GTA:
-                        ind_arr2[i][extra_weight_index] = bone_by_vgroup[grp.group]
-                    elif current_game == SollumzGame.RDR:
-                        ind_arr2[i][extra_weight_index] = grp.group
+                    ind_arr2[i][extra_weight_index] = grp.group
                     extra_weight_index += 1
                 else:
                     break
+        
+        if current_game == SollumzGame.GTA:
+            weights_arr = self._normalize_weights(weights_arr)
+            weights_arr2 = self._normalize_weights(weights_arr2)
 
-        weights_arr = self._normalize_weights(weights_arr)
-        weights_arr2 = self._normalize_weights(weights_arr2)
-
-        weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
-        weights_arr2, ind_arr2 = self._sort_weights_inds(weights_arr2, ind_arr2)
-
+            weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
+            weights_arr2, ind_arr2 = self._sort_weights_inds(weights_arr2, ind_arr2)
+        
         weights_arr = self._convert_to_int_range(weights_arr)
         weights_arr2 = self._convert_to_int_range(weights_arr2)
 

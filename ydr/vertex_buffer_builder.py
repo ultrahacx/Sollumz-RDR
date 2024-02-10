@@ -186,7 +186,11 @@ class VertexBufferBuilder:
 
             weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
             weights_arr2, ind_arr2 = self._sort_weights_inds(weights_arr2, ind_arr2)
-        
+        elif current_game == SollumzGame.RDR:
+            merged_weights = np.concatenate((weights_arr, weights_arr2), axis=1)
+            norm_merged_weights = self._normalize_weights(merged_weights)
+            weights_arr, weights_arr2 = np.hsplit(norm_merged_weights, 2)
+
         weights_arr = self._convert_to_int_range(weights_arr)
         weights_arr2 = self._convert_to_int_range(weights_arr2)
 

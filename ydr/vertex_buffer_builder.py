@@ -158,14 +158,14 @@ class VertexBufferBuilder:
         num_verts = len(self.mesh.vertices)
         bone_by_vgroup = self._bone_by_vgroup
 
-        ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
-        weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
-
-        ind_arr2 = np.zeros((num_verts, 4), dtype=np.uint32)
-        weights_arr2 = np.zeros((num_verts, 4), dtype=np.float32)
+        if current_game == SollumzGame.GTA:
+            ind_arr = np.zeros((num_verts, 4), dtype=np.uint32)
+            weights_arr = np.zeros((num_verts, 4), dtype=np.float32)
+        elif current_game == SollumzGame.RDR:
+            ind_arr = np.zeros((num_verts, 8), dtype=np.uint32)
+            weights_arr = np.zeros((num_verts, 8), dtype=np.float32)
 
         for i, vert in enumerate(self.mesh.vertices):
-            extra_weight_index = 0
             for j, grp in enumerate(vert.groups):
                 if j < 4:
                     weights_arr[i][j] = grp.weight
@@ -173,23 +173,19 @@ class VertexBufferBuilder:
                         ind_arr[i][j] = bone_by_vgroup[grp.group]
                     elif current_game == SollumzGame.RDR:
                         ind_arr[i][j] = grp.group
-                elif j >= 4 and j < 8:
-                    weights_arr2[i][extra_weight_index] = grp.weight
-                    ind_arr2[i][extra_weight_index] = grp.group
-                    extra_weight_index += 1
+                elif current_game == SollumzGame.RDR and j >= 4 and j < 8:
+                    weights_arr[i][j] = grp.weight
+                    ind_arr[i][j] = grp.group
                 else:
                     break
         
         if current_game == SollumzGame.GTA:
             weights_arr = self._normalize_weights(weights_arr)
-            weights_arr2 = self._normalize_weights(weights_arr2)
-
             weights_arr, ind_arr = self._sort_weights_inds(weights_arr, ind_arr)
-            weights_arr2, ind_arr2 = self._sort_weights_inds(weights_arr2, ind_arr2)
         elif current_game == SollumzGame.RDR:
-            merged_weights = np.concatenate((weights_arr, weights_arr2), axis=1)
-            norm_merged_weights = self._normalize_weights(merged_weights)
-            weights_arr, weights_arr2 = np.hsplit(norm_merged_weights, 2)
+            normalized_weights = self._normalize_weights(weights_arr)
+            weights_arr, weights_arr2 = np.hsplit(normalized_weights, 2)
+            ind_arr, ind_arr2 = np.hsplit(ind_arr, 2)
 
         weights_arr = self._convert_to_int_range(weights_arr)
         weights_arr2 = self._convert_to_int_range(weights_arr2)

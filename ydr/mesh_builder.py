@@ -126,11 +126,15 @@ class MeshBuilder:
                 if bones and bone_index < len(bones):
                     bone_name = bones[bone_index].name
             elif current_game == SollumzGame.RDR:
-                if bone_index > len(bone_mapping):
-                    raise Exception(f"Unable to get bone mapping as index {bone_index} is out of range in {bone_mapping}")
-                tag = bone_mapping[bone_index]
-                bone = get_bone_by_tag(tag)
-                bone_name = bone.name
+                if bone_mapping != None:
+                    if bone_index > len(bone_mapping):
+                        raise Exception(f"Unable to get bone mapping as index {bone_index} is out of range in {bone_mapping}")
+                    tag = bone_mapping[bone_index]
+                    bone = get_bone_by_tag(tag)
+                    bone_name = bone.name
+                else:
+                    if bones and bone_index < len(bones):
+                        bone_name = bones[bone_index].name
             
             vgroup = obj.vertex_groups.get(bone_name)
             if vgroup != None:

@@ -214,8 +214,11 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
     model_xml.geometries = geometries
 
     if current_game == SollumzGame.RDR:
-        mapping = [bones[index].bone_properties.tag for index in geometries_data[1].values()]
-        model_xml.bone_mapping = mapping
+        if geometries_data[1] != None:
+            mapping = [bones[index].bone_properties.tag for index in geometries_data[1].values()]
+            model_xml.bone_mapping = mapping
+        else:
+            delattr(model_xml, "bone_mapping")
         model_xml.bounding_box_max = get_max_vector_list(
             geom.bounding_box_max for geom in geometries)
         model_xml.bounding_box_min = get_min_vector_list(
@@ -354,7 +357,8 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
                         semantic_text = semantic_text + str(semantic[1])
                         semantic_format = semantic_format + str(semantic[2])
                         break
-            geom_xml.bone_count = len(bone_by_vgroup)
+            if bone_by_vgroup != None:
+                geom_xml.bone_count = len(bone_by_vgroup)
             geom_xml.vertices = vert_buffer
             geom_xml.indices = ind_buffer
             geom_xml.vertex_layout = VertexLayout()

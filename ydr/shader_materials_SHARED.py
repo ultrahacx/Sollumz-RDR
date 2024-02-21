@@ -402,8 +402,8 @@ def create_parameter_node(
     node.set_size(cols, rows)
     node.set_display_type(display_type)
 
-    if rows == 1 and param.type in {ShaderParameterType.FLOAT, ShaderParameterType.FLOAT2,
-                                    ShaderParameterType.FLOAT3, ShaderParameterType.FLOAT4}:
+    if rows == 1 and param.type in {ShaderParameterType.FLOAT, ShaderParameterType.FLOAT2, ShaderParameterType.FLOAT3, 
+                                    ShaderParameterType.FLOAT4, ShaderParameterType.CBUFFER, ShaderParameterType.SAMPLER}:
         node.set("X", param.x)
         if cols > 1:
             node.set("Y", param.y)
@@ -411,6 +411,12 @@ def create_parameter_node(
             node.set("Z", param.z)
         if cols > 3:
             node.set("W", param.w)
+
+        if param.type == ShaderParameterType.CBUFFER:
+            node.extra_property.buffer = param.buffer
+            node.extra_property.offset = param.offset
+        elif param.type == ShaderParameterType.SAMPLER:
+            node.extra_property.index = param.index
 
 
 def link_diffuse(b: ShaderBuilder, imgnode):

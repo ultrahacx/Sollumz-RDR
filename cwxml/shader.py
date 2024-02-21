@@ -152,22 +152,8 @@ class ShaderParameterCBufferDef(ShaderParameterDef):
         self.buffer = AttributeProperty("buffer", 0)
         self.length = AttributeProperty("length", 0)
         self.offset = AttributeProperty("offset", 0)
-        self.value_type = AttributeProperty("value_type")
-        match self.value_type:
-            case ShaderParameterType.FLOAT:
-                self.x = AttributeProperty("x", 0.0)
-            case ShaderParameterType.FLOAT2:
-                self.x = AttributeProperty("x", 0.0)
-                self.y = AttributeProperty("y", 0.0)
-            case ShaderParameterType.FLOAT3:
-                self.x = AttributeProperty("x", 0.0)
-                self.y = AttributeProperty("y", 0.0)
-                self.z = AttributeProperty("z", 0.0)
-            case ShaderParameterType.FLOAT4:
-                self.x = AttributeProperty("x", 0.0)
-                self.y = AttributeProperty("y", 0.0)
-                self.z = AttributeProperty("z", 0.0)
-                self.z = AttributeProperty("w", 0.0)
+        self.value_type = AttributeProperty("value_type", "")
+        
 
 
 class ShaderParameteUnknownDef(ShaderParameterDef):
@@ -205,6 +191,22 @@ class ShaderParameterDefsList(ListProperty):
                         param = ShaderParameterSamplerDef.from_xml(child)
                     case ShaderParameterType.CBUFFER:
                         param = ShaderParameterCBufferDef.from_xml(child)
+                        attribs = child.attrib
+                        match param.value_type:
+                            case ShaderParameterType.FLOAT:
+                                param.x = float(attribs["x"])
+                            case ShaderParameterType.FLOAT2:
+                                param.x = float(attribs["x"])
+                                param.y = float(attribs["y"])
+                            case ShaderParameterType.FLOAT3:
+                                param.x = float(attribs["x"])
+                                param.y = float(attribs["y"])
+                                param.z = float(attribs["z"])
+                            case ShaderParameterType.FLOAT4:
+                                param.x = float(attribs["x"])
+                                param.y = float(attribs["y"])
+                                param.z = float(attribs["z"])
+                                param.w = float(attribs["w"])
                     case ShaderParameterType.UNKNOWN:
                         param = ShaderParameteUnknownDef.from_xml(child)
                     case _:

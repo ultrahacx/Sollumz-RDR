@@ -42,7 +42,6 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
             layout.prop(drawable_props, "parent_bone_tag")
 
         if obj.sollum_game_type == SollumzGame.RDR and obj.type == "ARMATURE":
-            print(dir(obj.drawable_properties))
             layout.prop(obj.drawable_properties, "unknown_24")
             layout.prop(obj.drawable_properties, "unknown_60")
             layout.prop(obj.drawable_properties, "parent_bone_tag")

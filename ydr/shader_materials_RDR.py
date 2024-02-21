@@ -53,6 +53,7 @@ def RDR_create_basic_shader_nodes(b: ShaderBuilder):
         match param.type:
             case ShaderParameterType.TEXTURE:
                 imgnode = create_image_node(node_tree, param)
+                imgnode.texture_properties.index = param.index
                 if param.name == "diffusetex":
                     texture = imgnode
                 elif param.name == "bumptex":

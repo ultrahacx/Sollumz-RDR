@@ -1165,6 +1165,11 @@ def get_shaders_from_blender(materials):
         elif current_game == SollumzGame.RDR:
             shader.draw_bucket = RenderBucket[material.shader_properties.renderbucket].value
             shader_def = ShaderManager.find_shader(shader.name, current_game)
+            shader_bucket = shader_def.render_bucket
+            if not isinstance(shader_bucket, int):
+                shader_bucket = shader_bucket[0]
+            shader_bucket = int(str(shader_bucket), 16)
+            shader.draw_bucket_flag = (shader_bucket & 0x80) != 0
             shader.parameters = RDRParameters()
             shader.parameters.buffer_size = ' '.join([str(elem) for elem in shader_def.buffer_size])
             shader.parameters.items = create_shader_parameters_list_template(shader_def)

@@ -555,9 +555,11 @@ def create_shader(filename: str, game: SollumzGame = SollumzGame.GTA):
         mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
     elif game == SollumzGame.RDR:
         if isinstance(shader.render_bucket, int):
-            mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
+            render_bucket = shader.render_bucket
         else:
-            mat.shader_properties.renderbucket = RenderBucket(shader.render_bucket[0]).name
+            render_bucket = shader.render_bucket[0]
+        render_bucket = int(str(render_bucket), 16) & 0x7F
+        mat.shader_properties.renderbucket = RenderBucket(render_bucket).name
 
     bsdf, material_output = find_bsdf_and_material_output(mat)
     assert material_output is not None, "ShaderNodeOutputMaterial not found in default node_tree!"

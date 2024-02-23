@@ -377,6 +377,7 @@ class Shader(ElementTree):
             self.parameters = ParametersList()
         elif current_game == SollumzGame.RDR:
             self.draw_bucket = ValueProperty("DrawBucket", 0)
+            self.draw_bucket_flag = ValueProperty("DrawBucketFlag", False)
             self.parameters = RDRParameters()
 
     def __hash__(self) -> int:

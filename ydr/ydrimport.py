@@ -256,7 +256,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
     elif current_game == SollumzGame.RDR:
         material = create_shader(shader.name, current_game)
-
+        material.shader_properties.renderbucket = RenderBucket(shader.draw_bucket).name
     material.name = shader.name
     
     parameters = shader.parameters

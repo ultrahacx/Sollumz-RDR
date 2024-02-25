@@ -262,11 +262,10 @@ def set_col_material_flags(mat, material_flags):
 def set_col_material_properties(mat_xml: ColMaterial, mat: bpy.types.Material):
     mat.collision_properties.procedural_id = mat_xml.procedural_id
     mat.collision_properties.unk = mat_xml.unk
+    mat.collision_properties.room_id = mat_xml.room_id
     if current_game == SollumzGame.GTA:
         mat.collision_properties.ped_density = mat_xml.ped_density
         mat.collision_properties.material_color_index = mat_xml.material_color_index
-    elif current_game == SollumzGame.RDR:
-        mat.collision_properties.room_id = mat_xml.room_id
 
     set_col_material_flags(mat, mat_xml.flags)
 

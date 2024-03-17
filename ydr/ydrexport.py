@@ -1,7 +1,7 @@
 import os
 import shutil
 import math
-from Sollumz.cwxml.drawable_RDR import VertexLayout
+from ..cwxml.drawable_RDR import VertexLayout
 import bmesh
 import bpy
 import zlib

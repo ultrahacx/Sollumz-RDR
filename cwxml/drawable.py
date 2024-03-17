@@ -1,6 +1,6 @@
 import io
 import os
-from Sollumz.sollumz_properties import SollumzGame
+from ..sollumz_properties import SollumzGame
 from mathutils import Matrix
 import numpy as np
 from numpy.typing import NDArray
@@ -500,6 +500,18 @@ class Skeleton(ElementTree):
         self.bones = BonesList("Bones")
 
 
+class ExtraSkeletons(Skeleton):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+
+
+class ExtraSkeletonsList(ListProperty):
+    list_type = ExtraSkeletons
+    tag_name = "ExtraSkeletons"
+
+
 class BoneLimit(ElementTree):
     tag_name = "Item"
 
@@ -869,6 +881,7 @@ class Drawable(ElementTree, AbstractClass):
             self.lights = Lights()
         elif current_game == SollumzGame.RDR:
             self.version = AttributeProperty("version", 1)
+            self.extra_skeletons = ExtraSkeletonsList()
             self.drawable_models_high = LodList("LodHigh")
             self.drawable_models_med = LodList("LodMed")
             self.drawable_models_low = LodList("LodLow")

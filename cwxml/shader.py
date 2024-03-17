@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 import os
 from abc import ABC, abstractmethod
-from Sollumz.cwxml.drawable_RDR import VERT_ATTR_DTYPES
-from Sollumz.sollumz_properties import SollumzGame
+from ..cwxml.drawable_RDR import VERT_ATTR_DTYPES
+from ..sollumz_properties import SollumzGame
 from .element import (
     ElementTree,
     ListProperty,
@@ -203,10 +203,14 @@ class ShaderParameterDefsList(ListProperty):
                                 param.y = float(attribs["y"])
                                 param.z = float(attribs["z"])
                             case ShaderParameterType.FLOAT4:
-                                param.x = float(attribs["x"])
-                                param.y = float(attribs["y"])
-                                param.z = float(attribs["z"])
-                                param.w = float(attribs["w"])
+                                if "count" in attribs:
+                                    param.count = int(attribs["count"])
+                                else:
+                                    param.count = 0
+                                    param.x = float(attribs["x"])
+                                    param.y = float(attribs["y"])
+                                    param.z = float(attribs["z"])
+                                    param.w = float(attribs["w"])
                     case ShaderParameterType.UNKNOWN:
                         param = ShaderParameteUnknownDef.from_xml(child)
                     case _:

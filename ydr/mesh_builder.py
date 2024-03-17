@@ -1,4 +1,4 @@
-from Sollumz.sollumz_properties import SollumzGame
+from ..sollumz_properties import SollumzGame
 import bpy
 import numpy as np
 from numpy.typing import NDArray
@@ -126,7 +126,7 @@ class MeshBuilder:
                 if bones and bone_index < len(bones):
                     bone_name = bones[bone_index].name
             elif current_game == SollumzGame.RDR:
-                if bone_mapping != None:
+                if bone_mapping != None and len(bone_mapping) > 0:
                     if bone_index > len(bone_mapping):
                         raise Exception(f"Unable to get bone mapping as index {bone_index} is out of range in {bone_mapping}")
                     tag = bone_mapping[bone_index]

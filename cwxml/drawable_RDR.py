@@ -1,7 +1,7 @@
 import io
 import os
 from xml.etree.ElementTree import Element
-from Sollumz.cwxml.element import Element
+from ..cwxml.element import Element
 from mathutils import Matrix
 import numpy as np
 from numpy.typing import NDArray

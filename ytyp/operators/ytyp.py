@@ -171,13 +171,12 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
             archetype_type = context.scene.create_archetype_type
             if not obj.sollum_type in self.allowed_types:
                 continue
-            if archetype_type == ArchetypeType.MLO:
-                if selected_ytyp.game == SollumzGame.RDR:
-                    item.unknown_1 = MapEntityType.INTERIOR_INSTANCE
-                if obj.sollum_type != SollumType.BOUND_COMPOSITE:
-                    self.message(
+            if archetype_type == ArchetypeType.MLO and obj.sollum_type != SollumType.BOUND_COMPOSITE:
+                found = True
+                self.warning(
                         f"MLO asset '{obj.name}' must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
-                    continue
+                continue
+
             found = True
             item = selected_ytyp.new_archetype()
 
@@ -193,6 +192,10 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
             item.drawable_dictionary = drawable_dictionary
             item.physics_dictionary = obj.name if has_collision(obj) and obj.sollum_type != SollumType.FRAGMENT else ""
 
+            if archetype_type == ArchetypeType.MLO:
+                if selected_ytyp.game == SollumzGame.RDR:
+                    item.unknown_1 = MapEntityType.INTERIOR_INSTANCE
+                
             if obj.sollum_type == SollumType.DRAWABLE:
                 item.asset_type = AssetType.DRAWABLE
                 if selected_ytyp.game == SollumzGame.RDR:

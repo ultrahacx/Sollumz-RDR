@@ -316,6 +316,7 @@ def init_poly_obj(poly, sollum_type, materials):
 
     obj = bpy.data.objects.new(name, mesh)
     obj.sollum_type = sollum_type.value
+    obj.sollum_game_type = current_game
 
     return obj
 

@@ -288,7 +288,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         n.image = texture
 
                     # assign non color to normal maps
-                    if param.name in ("Bump", "bump", "normal") or param.name == "distanceMapSampler":
+                    if param.name in ("Bump", "bump", "normal", "bumptex", "speculartex", "speculartex2") or param.name == "distanceMapSampler":
                         n.image.colorspace_settings.name = "Non-Color"
 
                     preferences = get_addon_preferences(bpy.context)

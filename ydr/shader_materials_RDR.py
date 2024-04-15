@@ -172,7 +172,21 @@ def link_specular(b: ShaderBuilder, spctex):
 
     other_mix = try_get_node(node_tree, "ShaderNodeMixRGB")
     mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    mix.inputs["Fac"].default_value = 0.95
+
+    diffuse_node = node_tree.nodes.new('ShaderNodeBsdfDiffuse')
+
+    shader_rgb = node_tree.nodes.new('ShaderNodeShaderToRGB')
+    links.new(diffuse_node.outputs["BSDF"], shader_rgb.inputs["Shader"])
+
+    color_ramp = node_tree.nodes.new('ShaderNodeValToRGB')
+    color_ramp.color_ramp.elements[0].position = 0.0
+    color_ramp.color_ramp.elements[1].position = 1.0
+    color_ramp.color_ramp.elements[0].color = (1,1,1,1)
+    color_ramp.color_ramp.elements[1].color = (0,0,0,1)
+    links.new(shader_rgb.outputs["Color"], color_ramp.inputs["Fac"])
+
+    links.new(color_ramp.outputs["Color"], mix.inputs["Fac"])
+
 
     separate_rgb = node_tree.nodes.new(type='ShaderNodeSeparateColor')
     links.new(spctex.outputs["Color"], separate_rgb.inputs["Color"])

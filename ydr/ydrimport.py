@@ -199,7 +199,7 @@ def set_drawable_model_properties(model_props: DrawableModelProperties, model_xm
 
 def create_drawable_armature(drawable_xml: Drawable, name: str):
     drawable_obj = create_armature_obj_from_skel(
-        drawable_xml.skeleton, name, SollumType.DRAWABLE)
+        drawable_xml, name, SollumType.DRAWABLE)
     if current_game == SollumzGame.GTA:
         create_joint_constraints(drawable_obj, drawable_xml.joints)
 
@@ -208,7 +208,7 @@ def create_drawable_armature(drawable_xml: Drawable, name: str):
     return drawable_obj
 
 
-def create_armature_obj_from_skel(skeleton: Skeleton, name: str, sollum_type: SollumType):
+def create_armature_obj_from_skel(skeleton: Drawable, name: str, sollum_type: SollumType):
     armature = bpy.data.armatures.new(f"{name}.skel")
     obj = create_blender_object(sollum_type, name, armature, current_game)
 
@@ -252,7 +252,8 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         if not filename:
             filename = f"{shader.name}.sps"
 
-        material = create_shader(filename)
+        material = create_shader(filename, current_game)
+        print("GTA bucket:", current_game, material, dir(shader))
         material.shader_properties.renderbucket = RenderBucket(shader.render_bucket).name
     elif current_game == SollumzGame.RDR:
         material = create_shader(shader.name, current_game)
@@ -358,11 +359,10 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
     return material
 
 
-def create_drawable_skel(skeleton_xml: Skeleton, armature_obj: bpy.types.Object):
+def create_drawable_skel(skeleton_xml: Drawable, armature_obj: bpy.types.Object):
     bpy.context.view_layer.objects.active = armature_obj
-    bones = skeleton_xml.bones
+    bones = skeleton_xml.skeleton.bones
 
-    # Need to go into edit mode to modify edit bones
     bpy.ops.object.mode_set(mode="EDIT")
 
     for bone_xml in bones:
@@ -379,6 +379,10 @@ def create_drawable_skel(skeleton_xml: Skeleton, armature_obj: bpy.types.Object)
 def create_bpy_bone(bone_xml: Bone, armature: bpy.types.Armature):
     # bpy.context.view_layer.objects.active = armature
     edit_bone = armature.edit_bones.new(bone_xml.name)
+    
+    if edit_bone is None:
+            edit_bone = armature.edit_bones.new(bone_xml.name)
+
     if bone_xml.parent_index != -1:
         edit_bone.parent = armature.edit_bones[bone_xml.parent_index]
 

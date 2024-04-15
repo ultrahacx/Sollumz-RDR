@@ -384,8 +384,6 @@ def create_parameter_node(
             cols, rows = 1, 1
             display_type = SzShaderNodeParameterDisplayType.DEFAULT
         case ShaderParameterType.CBUFFER:
-            # setattr(node, "buffer", param.buffer)
-            # setattr(node, "offset", param.offset)
             match param.value_type:
                 case ShaderParameterType.FLOAT:
                     cols, rows = 1, 1
@@ -394,11 +392,10 @@ def create_parameter_node(
                 case ShaderParameterType.FLOAT3:
                     cols, rows = 3, 1
                 case ShaderParameterType.FLOAT4:
-                    cols, rows = 4, 1
+                    cols, rows = 4, max(1, param.count)
 
     if param.hidden:
         display_type = SzShaderNodeParameterDisplayType.HIDDEN_IN_UI
-
     node.set_size(cols, rows)
     node.set_display_type(display_type)
 

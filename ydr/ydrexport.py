@@ -898,6 +898,10 @@ def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matri
     # default value for this seems to be <TransformUnk x="0" y="4" z="-3" w="0" />
     if current_game == SollumzGame.GTA:
         bone_xml.transform_unk = Quaternion((0, 0, 4, -3))
+    elif current_game == SollumzGame.RDR:
+        transform_unk_y = 4 * pow(bone_xml.rotation.w, 2)
+        transform_unk_z = 1 - transform_unk_y
+        bone_xml.transform_unk = Quaternion((0, transform_unk_y, transform_unk_z, 0))
 
 
 def calculate_skeleton_unks(skeleton_xml: Skeleton):

@@ -1,6 +1,7 @@
 from abc import ABC as AbstractClass
 from mathutils import Matrix
 from xml.etree import ElementTree as ET
+from ..sollumz_properties import SollumzGame
 from .element import (
     AttributeProperty,
     ElementTree,
@@ -15,7 +16,9 @@ from .element import (
 )
 from .drawable import Drawable, Lights, VertexLayoutList
 from .bound import BoundComposite
+from .fragment_RDR import RDRFragment
 
+current_game = SollumzGame.GTA
 
 class YFT:
 
@@ -23,7 +26,16 @@ class YFT:
 
     @staticmethod
     def from_xml_file(filepath):
-        return Fragment.from_xml_file(filepath)
+        global current_game
+        tree = ET.parse(filepath)
+        gameTag = tree.getroot().tag
+        if "RDR2" in gameTag:
+            raise Exception("Fragment import/export not supported yet for RDR")
+            current_game = SollumzGame.RDR
+            return RDRFragment.from_xml_file(filepath)
+        else:
+            current_game = SollumzGame.GTA
+            return Fragment.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(fragment, filepath):

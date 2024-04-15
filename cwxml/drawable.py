@@ -249,13 +249,13 @@ class CBufferShaderParameter(ShaderParameter):
         element.set("length", str(self.length))
 
         if hasattr(self, "x") and self.x is not None:
-            element.set("x", str(self.x))
+            element.set("x", str(round(self.x, 5)))
         if hasattr(self, "y") and self.y is not None:
-            element.set("y", str(self.y))
+            element.set("y", str(round(self.y, 5)))
         if hasattr(self, "z") and self.z is not None:
-            element.set("z", str(self.z))
+            element.set("z", str(round(self.z, 5)))
         if hasattr(self, "w") and self.w is not None:
-            element.set("w", str(self.w))
+            element.set("w", str(round(self.w, 5)))
 
         return element
 
@@ -447,10 +447,10 @@ class Bone(ElementTree):
         self.index = ValueProperty("Index", 0)
         # by default if a bone don't have parent or sibling there should be -1 instead of 0
         self.parent_index = ValueProperty("ParentIndex", -1)
-
+        self.transform_unk = QuaternionProperty("TransformUnk")
+        
         if current_game == SollumzGame.GTA:
             self.sibling_index = ValueProperty("SiblingIndex", -1)
-            self.transform_unk = QuaternionProperty("TransformUnk")
             self.translation = VectorProperty("Translation")
         elif current_game == SollumzGame.RDR:
             self.sibling_index = ValueProperty("NextSiblingIndex", -1)

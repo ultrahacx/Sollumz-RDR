@@ -30,7 +30,6 @@ class YFT:
         tree = ET.parse(filepath)
         gameTag = tree.getroot().tag
         if "RDR2" in gameTag:
-            raise Exception("Fragment import/export not supported yet for RDR")
             current_game = SollumzGame.RDR
             return RDRFragment.from_xml_file(filepath)
         else:

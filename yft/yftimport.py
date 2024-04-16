@@ -25,6 +25,7 @@ from ..ydr import ydrimport
 current_game = SollumzGame.GTA
 
 def import_yft(filepath: str):
+    raise Exception("Fragment import has been disabled as it's Work In Progress")
     import_settings = get_import_settings()
 
     yft_xml = YFT.from_xml_file(filepath)

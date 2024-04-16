@@ -254,6 +254,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
         match param.type:
             case ShaderParameterType.TEXTURE:
                 imgnode = create_image_node(node_tree, param)
+                imgnode.texture_properties.index = param.index
                 if param.name == "lyr0diffusetex":
                     lyr0diffusetex = imgnode
                 elif param.name == "lyr1diffusetex":

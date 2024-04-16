@@ -271,6 +271,18 @@ class SamplerShaderParameter(ShaderParameter):
         self.index = AttributeProperty("index", 0)
         self.x = AttributeProperty("sampler", 0)
 
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = super(SamplerShaderParameter,
+                    SamplerShaderParameter).from_xml(element)
+        return new
+    
+    def to_xml(self):
+        element = super().to_xml()
+        element.set("index", str(int(self.index)))
+        element.set("sampler", str(int(self.x)))
+        return element
+
     def __hash__(self) -> int:
         return hash((self.name, self.type, self.index, self.x))
 

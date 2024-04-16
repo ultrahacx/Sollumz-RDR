@@ -496,6 +496,8 @@ class SOLLUMZ_OT_set_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operator):
             for node in mat.node_tree.nodes:
                 if isinstance(node, bpy.types.ShaderNodeTexImage):
                     node.texture_properties.embedded = True
+                    if obj.sollum_game_type == SollumzGame.RDR:
+                        node.texture_properties.extra_flags = 402685954
             self.message(
                 f"Set {obj.name}s material {mat.name} textures to embedded.")
         else:
@@ -527,6 +529,8 @@ class SOLLUMZ_OT_set_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operator)
                 for node in mat.node_tree.nodes:
                     if isinstance(node, bpy.types.ShaderNodeTexImage):
                         node.texture_properties.embedded = True
+                        if obj.sollum_game_type == SollumzGame.RDR:
+                            node.texture_properties.extra_flags = 402685954
                 self.message(
                     f"Set {obj.name}s material {mat.name} textures to embedded.")
             else:
@@ -562,6 +566,8 @@ class SOLLUMZ_OT_remove_all_textures_embedded(SOLLUMZ_OT_base, bpy.types.Operato
             for node in mat.node_tree.nodes:
                 if (isinstance(node, bpy.types.ShaderNodeTexImage)):
                     node.texture_properties.embedded = False
+                    if obj.sollum_game_type == SollumzGame.RDR:
+                            node.texture_properties.extra_flags = 0
             self.message(
                 f"Set {obj.name}s material {mat.name} textures to unembedded.")
         else:
@@ -593,6 +599,8 @@ class SOLLUMZ_OT_unset_all_materials_embedded(SOLLUMZ_OT_base, bpy.types.Operato
                 for node in mat.node_tree.nodes:
                     if (isinstance(node, bpy.types.ShaderNodeTexImage)):
                         node.texture_properties.embedded = False
+                        if obj.sollum_game_type == SollumzGame.RDR:
+                            node.texture_properties.extra_flags = 0
                 self.message(
                     f"Set {obj.name}s materials to unembedded.")
             else:

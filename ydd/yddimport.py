@@ -88,7 +88,7 @@ def RDR_create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, exte
     ydd_xml = ydd_xml.drawables
 
     # Create armatures parented to external armature which will be used on export
-    skeletons_collection_empty = create_empty_object(SollumType.SKELETON)
+    skeletons_collection_empty = create_empty_object(SollumType.SKELETON, "ArmatureList", SollumzGame.RDR)
     for drawable_index, drawable_xml in enumerate(ydd_xml):
         if drawable_xml.skeleton.bones:
             armature = bpy.data.armatures.new(f"drawable_skeleton_{drawable_index}.skel")
@@ -99,7 +99,6 @@ def RDR_create_ydd_obj_ext_skel(ydd_xml: DrawableDictionary, filepath: str, exte
             ydd_armature_obj.parent = skeletons_collection_empty
 
         for index, extra_skeleton_xml in enumerate(drawable_xml.extra_skeletons):
-            print("Creating extra armature:", index )
             external_armature = create_extra_skeleton_armature(f"extra_skeleton_{drawable_index}_{index}", extra_skeleton_xml)
             external_armature.parent = skeletons_collection_empty
 

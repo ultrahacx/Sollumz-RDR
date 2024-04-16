@@ -172,9 +172,16 @@ class TextureFlags(bpy.types.PropertyGroup):
     unk24: bpy.props.BoolProperty(name="UNK24", default=False)
 
 
+def updateEmbeddedTextureProperty(self, context):
+    if self.game_type == SollumzGame.RDR:
+        if self.embedded:
+            self.extra_flags = 402685954
+        else:
+            self.extra_flags = 0
+
 class TextureProperties(bpy.types.PropertyGroup):
     index: bpy.props.IntProperty(default=0)
-    embedded: bpy.props.BoolProperty(name="Embedded", default=False)
+    embedded: bpy.props.BoolProperty(name="Embedded", default=False, update=updateEmbeddedTextureProperty)
     usage: bpy.props.EnumProperty(
         items=items_from_enums(TextureUsage),
         name="Usage",
@@ -188,6 +195,12 @@ class TextureProperties(bpy.types.PropertyGroup):
     )
 
     extra_flags: bpy.props.IntProperty(name="Extra Flags", default=0)
+
+    game_type: bpy.props.EnumProperty(
+        items=items_from_enums(SollumzGame),
+        name="Game Type",
+        default=SollumzGame.GTA
+    )
 
 
 class BoneFlag(bpy.types.PropertyGroup):

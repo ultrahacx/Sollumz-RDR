@@ -327,6 +327,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
 
                                     n.texture_properties.extra_flags = texture.extra_flags
                                 elif current_game == SollumzGame.RDR:
+                                    n.texture_properties.game_type = SollumzGame.RDR
                                     n.texture_properties.extra_flags = texture.flags
 
                     if not n.texture_properties.embedded and not n.image.filepath:

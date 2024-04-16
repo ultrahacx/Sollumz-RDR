@@ -1,5 +1,6 @@
 from typing import NamedTuple
 import bpy
+from ..sollumz_properties import SollumzGame
 from ..cwxml.shader import (
     ShaderManager,
     ShaderDef,
@@ -54,6 +55,7 @@ def RDR_create_basic_shader_nodes(b: ShaderBuilder):
             case ShaderParameterType.TEXTURE:
                 imgnode = create_image_node(node_tree, param)
                 imgnode.texture_properties.index = param.index
+                imgnode.texture_properties.game_type = SollumzGame.RDR
                 if param.name == "diffusetex":
                     texture = imgnode
                 elif param.name == "bumptex":
@@ -255,6 +257,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
             case ShaderParameterType.TEXTURE:
                 imgnode = create_image_node(node_tree, param)
                 imgnode.texture_properties.index = param.index
+                imgnode.texture_properties.game_type = SollumzGame.RDR
                 if param.name == "lyr0diffusetex":
                     lyr0diffusetex = imgnode
                 elif param.name == "lyr1diffusetex":

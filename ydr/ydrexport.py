@@ -830,16 +830,20 @@ def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bp
     bone_xml.parent_index = get_bone_parent_index(bone, armature)
     bone_xml.sibling_index = get_bone_sibling_index(bone, armature)
 
-    if bone_xml.sibling_index == -1 and current_game == SollumzGame.RDR:
-        if bone_xml.parent_index == -1:
-            bone_xml.last_sibling_index = len(armature.bones)
-        else:
-            parent_bone = armature.bones[bone_xml.parent_index]
-            parent_sibling_index = get_bone_sibling_index(parent_bone, armature)
-            if parent_sibling_index == -1:
-                bone_xml.last_sibling_index = skeleton_xml.bones[bone_xml.parent_index].last_sibling_index
+    if current_game == SollumzGame.RDR:
+        if bone_xml.sibling_index == -1:
+            if bone_xml.parent_index == -1:
+                bone_xml.last_sibling_index = len(armature.bones)
             else:
-                bone_xml.last_sibling_index = parent_sibling_index
+                parent_bone = armature.bones[bone_xml.parent_index]
+                parent_sibling_index = get_bone_sibling_index(parent_bone, armature)
+                if parent_sibling_index == -1:
+                    bone_xml.last_sibling_index = skeleton_xml.bones[bone_xml.parent_index].last_sibling_index
+                else:
+                    bone_xml.last_sibling_index = parent_sibling_index
+        else:
+            bone_xml.last_sibling_index = bone_xml.sibling_index
+                
 
 
     set_bone_xml_flags(bone_xml, pose_bone)

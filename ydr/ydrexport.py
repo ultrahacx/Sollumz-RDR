@@ -913,7 +913,10 @@ def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matri
     elif current_game == SollumzGame.RDR:
         transform_unk_y = 4 * pow(bone_xml.rotation.w, 2)
         transform_unk_z = 1 - transform_unk_y
-        bone_xml.transform_unk = Quaternion((0, transform_unk_y, transform_unk_z, 0))
+        if transform_unk_y == 4.0 and transform_unk_z == -3.0:
+            delattr(bone_xml, "transform_unk")
+        else:
+            bone_xml.transform_unk = Quaternion((0, 0, transform_unk_y, transform_unk_z))
 
 
 def calculate_skeleton_unks(skeleton_xml: Skeleton):

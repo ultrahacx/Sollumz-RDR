@@ -805,7 +805,7 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, apply_transforms: bool =
 
     for bone_index, pose_bone in enumerate(bones):
 
-        bone_xml = create_bone_xml(pose_bone, bone_index, armature_obj.data, matrix)
+        bone_xml = create_bone_xml(pose_bone, bone_index, armature_obj.data, matrix, skeleton_xml)
 
         skeleton_xml.bones.append(bone_xml)
 
@@ -819,7 +819,7 @@ def create_skeleton_xml(armature_obj: bpy.types.Object, apply_transforms: bool =
     return skeleton_xml
 
 
-def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, armature_matrix: Matrix):
+def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bpy.types.Armature, armature_matrix: Matrix, skeleton_xml: list):
     bone = pose_bone.bone
 
     bone_xml = Bone()
@@ -830,9 +830,17 @@ def create_bone_xml(pose_bone: bpy.types.PoseBone, bone_index: int, armature: bp
     bone_xml.parent_index = get_bone_parent_index(bone, armature)
     bone_xml.sibling_index = get_bone_sibling_index(bone, armature)
 
-    # Needs more research56 as this result is not consistent in all cases
     if bone_xml.sibling_index == -1 and current_game == SollumzGame.RDR:
-        bone_xml.last_sibling_index = len(armature.bones)
+        if bone_xml.parent_index == -1:
+            bone_xml.last_sibling_index = len(armature.bones)
+        else:
+            parent_bone = armature.bones[bone_xml.parent_index]
+            parent_sibling_index = get_bone_sibling_index(parent_bone, armature)
+            if parent_sibling_index == -1:
+                bone_xml.last_sibling_index = skeleton_xml.bones[bone_xml.parent_index].last_sibling_index
+            else:
+                bone_xml.last_sibling_index = parent_sibling_index
+
 
     set_bone_xml_flags(bone_xml, pose_bone)
     set_bone_xml_transforms(bone_xml, bone, armature_matrix)

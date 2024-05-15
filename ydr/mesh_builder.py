@@ -77,7 +77,7 @@ class MeshBuilder:
     def set_mesh_normals(self, mesh: bpy.types.Mesh):
         mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
 
-        normals_normalized = [Vector(n).normalized()
+        normals_normalized = [Vector(n[:3]).normalized()
                               for n in self.vertex_arr["Normal"]]
         mesh.normals_split_custom_set_from_vertices(normals_normalized)
 

@@ -40,8 +40,8 @@ from collections.abc import MutableSequence
 
 VERT_ATTR_DTYPES = {
     "P": ["Position", np.float32, 3],
-    "N": ["Normal", np.float32, 3],
-    "X": ["Tangent", np.float32, 3],
+    "N": ["Normal", np.float32, 4],
+    "X": ["Tangent", np.float32, 4],
     "W": ["BlendWeights", np.uint32, 4],
     "I": ["BlendIndices", np.uint32, 4],
     "C": ["Colour", np.uint32, 4],

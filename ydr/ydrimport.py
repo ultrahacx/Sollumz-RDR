@@ -246,6 +246,7 @@ def shadergroup_to_materials(shader_group: ShaderGroup, filepath: str):
 def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath: str):
     texture_folder = os.path.dirname(filepath) + "\\" + os.path.basename(filepath)[:-8]
     material = None
+    hasTint = False
     if current_game == SollumzGame.GTA:
         filename = shader.filename
 
@@ -287,10 +288,14 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         texture = bpy.data.images.new(
                             name=param.texture_name, width=512, height=512) if not existing_texture else existing_texture
                         n.image = texture
-
+                 
                     # assign non color to normal maps
                     if param.name in ("Bump", "bump", "normal", "bumptex", "speculartex", "speculartex2") or param.name == "distanceMapSampler":
                         n.image.colorspace_settings.name = "Non-Color"
+
+                    # rdr check if we should set tint mix to 0.95
+                    if param.name == "tintpalettetex" and n.image is not None:
+                        hasTint = True
 
                     preferences = get_addon_preferences(bpy.context)
                     text_name = preferences.use_text_name_as_mat_name
@@ -357,6 +362,13 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
         dtl = material.node_tree.nodes["DetailSampler"]
         dtl_ext.image = dtl.image
 
+    if current_game == SollumzGame.RDR:
+        tint_value = 0.95 if hasTint else 0.0
+        for n in material.node_tree.nodes:
+            if n.name == "tint_mix_node":
+                n.inputs["Fac"].default_value = tint_value
+                break
+             
     return material
 
 

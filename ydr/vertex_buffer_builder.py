@@ -4,7 +4,7 @@ import bpy
 import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple, Optional
-
+from mathutils import Vector
 from ..tools.meshhelper import flip_uvs
 from ..cwxml.drawable import VertexBuffer
 
@@ -90,6 +90,10 @@ class VertexBufferBuilder:
 
         mesh_attrs["Tangent"] = self._get_tangents()
 
+        if current_game == SollumzGame.RDR:
+            mesh_attrs["Tangent1"] = Vector((1, 0, 0))
+            mesh_attrs["Tangent2"] = Vector((1, 0, 0))
+
         if self._has_weights:
             
             data = self._get_weights_indices()
@@ -101,10 +105,6 @@ class VertexBufferBuilder:
             mesh_attrs["BlendIndices"] = data[1]
             if current_game == SollumzGame.RDR:
                 mesh_attrs["BlendIndices1"] = data[3]
-
-        if current_game == SollumzGame.RDR:
-            mesh_attrs["Tangent1"] = mesh_attrs["Tangent"].copy()
-            mesh_attrs["Tangent2"] = mesh_attrs["Tangent"].copy()
 
         colors = self._get_colors()
 

@@ -44,7 +44,7 @@ from ..tools.meshhelper import (
 from ..tools.utils import get_filename, get_max_vector_list, get_min_vector_list
 from ..shared.shader_nodes import SzShaderNodeParameter
 from ..tools.blenderhelper import get_child_of_constraint, get_pose_inverse, remove_number_suffix, get_evaluated_obj
-from ..sollumz_helper import get_export_transforms_to_apply, get_sollumz_materials
+from ..sollumz_helper import find_sollumz_parent, get_export_transforms_to_apply, get_sollumz_materials
 from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     BOUND_TYPES,
@@ -90,7 +90,15 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     drawable_xml = Drawable(tag_name)
     drawable_xml.matrix = None
 
-    drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
+    if SollumzGame.GTA:
+        drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
+    elif SollumzGame.RDR:
+        obj_parent = find_sollumz_parent(drawable_obj, SollumType.DRAWABLE_DICTIONARY)
+        if obj_parent is not None:
+            drawable_xml.name = remove_number_suffix(obj_parent.name.lower())
+            drawable_xml.hash = remove_number_suffix(drawable_obj.name.lower())
+        else:
+            drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
 
     set_drawable_xml_properties(drawable_obj, drawable_xml)
 
@@ -200,6 +208,7 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
 
     set_model_xml_properties(model_obj, lod_level, bones, model_xml)
 
+    parent_obj = find_sollumz_parent(model_obj, SollumType.DRAWABLE_DICTIONARY)
     obj_eval = get_evaluated_obj(model_obj)
     mesh_eval = obj_eval.to_mesh()
     triangulate_mesh(mesh_eval)
@@ -208,17 +217,18 @@ def create_model_xml(model_obj: bpy.types.Object, lod_level: LODLevel, materials
         mesh_eval.transform(transforms_to_apply)
 
     geometries_data = create_geometries_xml(
-        mesh_eval, materials, bones, model_obj.vertex_groups)
+        mesh_eval, materials, bones, model_obj.vertex_groups, parent_obj)
     
     geometries = geometries_data[0]
     model_xml.geometries = geometries
 
     if current_game == SollumzGame.RDR:
-        if geometries_data[1] != None:
+        if geometries_data[1] != None and parent_obj != None and parent_obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
             mapping = [bones[index].bone_properties.tag for index in geometries_data[1].values()]
             model_xml.bone_mapping = mapping
         else:
             delattr(model_xml, "bone_mapping")
+
         model_xml.bounding_box_max = get_max_vector_list(
             geom.bounding_box_max for geom in geometries)
         model_xml.bounding_box_min = get_min_vector_list(
@@ -259,15 +269,17 @@ def set_model_xml_properties(model_obj: bpy.types.Object, lod_level: LODLevel,bo
     if current_game == SollumzGame.GTA:
         model_xml.render_mask = model_props.render_mask
         model_xml.matrix_count = 0
+        model_xml.has_skin = 1 if bones and model_obj.vertex_groups else 0
+    elif current_game == SollumzGame.RDR:
+        model_xml.has_skin = True if bones and model_obj.vertex_groups else False
     model_xml.flags = model_props.flags
-    model_xml.has_skin = 1 if bones and model_obj.vertex_groups else 0
     
     if model_xml.has_skin:
         model_xml.flags = 1  # skin flag, same meaning as has_skin
         model_xml.matrix_count = len(bones)
 
 
-def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None) -> list[Geometry]:
+def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.Material], bones: Optional[list[bpy.types.Bone]] = None, vertex_groups: Optional[list[bpy.types.VertexGroup]] = None, parent_obj=None) -> list[Geometry]:
     if len(mesh_eval.loops) == 0:
         logger.warning(
             f"Drawable Model '{mesh_eval.original.name}' has no Geometry! Skipping...")
@@ -350,6 +362,8 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
             shader_name = material.shader_properties.filename
             if "terrain_uber_" in shader_name:
                 geom_xml.colour_semantic = 1
+            else:
+                delattr(geom_xml, "colour_semantic")
 
             for item in vert_buffer.dtype.names:
                 for semantic in layout_map:
@@ -358,7 +372,10 @@ def create_geometries_xml(mesh_eval: bpy.types.Mesh, materials: list[bpy.types.M
                         semantic_format = semantic_format + str(semantic[2])
                         break
             if bone_by_vgroup != None:
-                geom_xml.bone_count = len(bone_by_vgroup)
+                if parent_obj is not None and parent_obj.sollum_type == SollumType.DRAWABLE_DICTIONARY:
+                    geom_xml.bone_count = len(bone_by_vgroup)
+                else:
+                    geom_xml.bone_count = len(bones)
             geom_xml.vertices = vert_buffer
             geom_xml.indices = ind_buffer
             geom_xml.vertex_layout = VertexLayout()
@@ -523,8 +540,9 @@ def join_skinned_models(model_xmls: list[DrawableModel]):
 
     skinned_model = DrawableModel()
     skinned_model.has_skin = 1
-    skinned_model.render_mask = skinned_models[0].render_mask
-    skinned_model.matrix_count = skinned_models[0].matrix_count
+    if current_game == SollumzGame.GTA:
+        skinned_model.render_mask = skinned_models[0].render_mask
+        skinned_model.matrix_count = skinned_models[0].matrix_count
     skinned_model.flags = skinned_models[0].flags
 
     geoms_by_shader: dict[int, list[Geometry]] = defaultdict(list)
@@ -547,25 +565,35 @@ def join_geometries(geometry_xmls: list[Geometry], shader_index: int):
     ind_arrs = get_valid_ind_arrs(geometry_xmls)
     vert_counts = [len(vert_arr) for vert_arr in vert_arrs]
 
-    new_geom.vertex_buffer.data = join_vert_arrs(vert_arrs)
-    new_geom.index_buffer.data = join_ind_arrs(ind_arrs, vert_counts)
+    if current_game == SollumzGame.GTA:
+        new_geom.vertex_buffer.data = join_vert_arrs(vert_arrs)
+        new_geom.index_buffer.data = join_ind_arrs(ind_arrs, vert_counts)
+        new_geom.bone_ids = list(
+            np.unique([geom.bone_ids for geom in geometry_xmls]))
+    elif current_game == SollumzGame.RDR:
+        new_geom.vertices = join_vert_arrs(vert_arrs)
+        new_geom.indices = join_ind_arrs(ind_arrs, vert_counts)
 
     new_geom.bounding_box_max = get_max_vector_list(
         geom.bounding_box_max for geom in geometry_xmls)
     new_geom.bounding_box_min = get_min_vector_list(
         geom.bounding_box_min for geom in geometry_xmls)
-    new_geom.bone_ids = list(
-        np.unique([geom.bone_ids for geom in geometry_xmls]))
 
     return new_geom
 
 
 def get_valid_vert_arrs(geometry_xmls: list[Geometry]):
-    return [geom.vertex_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+    if current_game == SollumzGame.GTA:
+        return [geom.vertex_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+    elif current_game == SollumzGame.RDR:
+        return [geom.vertices for geom in geometry_xmls if geom.vertices is not None and geom.indices is not None]
 
 
 def get_valid_ind_arrs(geometry_xmls: list[Geometry]):
-    return [geom.index_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+    if current_game == SollumzGame.GTA:
+        return [geom.index_buffer.data for geom in geometry_xmls if geom.vertex_buffer.data is not None and geom.index_buffer.data is not None]
+    elif current_game == SollumzGame.RDR:
+        return [geom.indices for geom in geometry_xmls if geom.vertices is not None and geom.indices is not None]
 
 
 def join_vert_arrs(vert_arrs: list[NDArray]):
@@ -901,7 +929,7 @@ def set_bone_xml_transforms(bone_xml: Bone, bone: bpy.types.Bone, armature_matri
     if bone.parent is not None:
         pos = armature_matrix @ bone.parent.matrix_local.inverted() @ bone.matrix_local.translation
 
-    bone_xml.translation = pos
+    bone_xml.translation = Vector((float(format(location, 'f')) for location in pos))
     bone_xml.rotation = bone.matrix.to_quaternion()
     bone_xml.scale = bone.matrix.to_scale()
 

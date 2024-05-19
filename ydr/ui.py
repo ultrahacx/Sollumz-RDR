@@ -25,30 +25,31 @@ class SOLLUMZ_PT_DRAWABLE_PANEL(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.use_property_decorate = False
-        layout.use_property_split = True
-
         obj = context.active_object
         drawable_props = obj.drawable_properties
 
-        layout.prop(drawable_props, "lod_dist_high", text="Lod Distance High")
-        layout.prop(drawable_props, "lod_dist_med", text="Med")
-        layout.prop(drawable_props, "lod_dist_low", text="Low")
-        layout.prop(drawable_props, "lod_dist_vlow", text="VLow")
+        col = layout.column(align=True)
+        col.use_property_decorate = False
+        col.use_property_split = True
+
+        col.prop(drawable_props, "lod_dist_high", text="Lod Distance High")
+        col.prop(drawable_props, "lod_dist_med", text="Med")
+        col.prop(drawable_props, "lod_dist_low", text="Low")
+        col.prop(drawable_props, "lod_dist_vlow", text="Vlow")
 
         if obj.sollum_game_type == SollumzGame.RDR and obj.type == "ARMATURE":
-            layout.prop(drawable_props, "unknown_24")
-            layout.prop(drawable_props, "unknown_60")
-            layout.prop(drawable_props, "parent_bone_tag")
+            col.prop(drawable_props, "unknown_24")
+            col.prop(drawable_props, "unknown_60")
+            col.prop(drawable_props, "parent_bone_tag")
 
         if obj.sollum_game_type == SollumzGame.RDR and obj.type == "ARMATURE":
-            layout.prop(obj.drawable_properties, "unknown_24")
-            layout.prop(obj.drawable_properties, "unknown_60")
-            layout.prop(obj.drawable_properties, "parent_bone_tag")
+            col.prop(drawable_props, "unknown_24")
+            col.prop(drawable_props, "unknown_60")
+            col.prop(drawable_props, "parent_bone_tag")
 
-        layout.separator()
+        col.separator()
 
-        layout.operator("sollumz.order_shaders", icon="MATERIAL")
+        col.operator("sollumz.order_shaders", icon="MATERIAL")
 
 
 class SOLLUMZ_UL_SHADER_ORDER_LIST(bpy.types.UIList):
@@ -92,11 +93,9 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         if obj is None:
             return False
 
-        active_lod = obj.sollumz_lods.active_lod
-        sollumz_parent = find_sollumz_parent(
-            obj, parent_type=SollumType.DRAWABLE)
+        sollumz_parent = find_sollumz_parent(obj, parent_type=SollumType.DRAWABLE)
 
-        return active_lod is not None and obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH" and sollumz_parent is not None
+        return obj.sollum_type == SollumType.DRAWABLE_MODEL and obj.type == "MESH" and sollumz_parent is not None
 
     def draw(self, context):
         layout = self.layout
@@ -104,10 +103,9 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
         layout.use_property_split = True
 
         obj = context.active_object
-        active_lod_level = obj.sollumz_lods.active_lod.level
+        active_lod_level = obj.sz_lods.active_lod_level
         mesh = obj.data
-        sollumz_parent = find_sollumz_parent(
-            obj, parent_type=SollumType.DRAWABLE)
+        sollumz_parent = find_sollumz_parent(obj, parent_type=SollumType.DRAWABLE)
 
         model_props = mesh.drawable_model_properties
 
@@ -119,20 +117,15 @@ class SOLLUMZ_PT_DRAWABLE_MODEL_PANEL(bpy.types.Panel):
 
         # All skinned objects (objects with vertex groups) go in the same drawable model
         if is_skinned_model:
-            model_props = sollumz_parent.skinned_model_properties.get_lod(
-                active_lod_level)
+            model_props = sollumz_parent.skinned_model_properties.get_lod(active_lod_level)
 
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
+            col.label(text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]} (Skinned)")
         else:
-            col.label(
-                text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
+            col.label(text=f"Active LOD: {SOLLUMZ_UI_NAMES[active_lod_level]}")
 
         col.separator()
 
         layout.prop(model_props, "render_mask")
-        layout.prop(model_props, "unknown_1")
-        layout.prop(model_props, "flags")
 
 
 class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
@@ -153,7 +146,7 @@ class SOLLUMZ_UL_SHADER_MATERIALS_LIST(bpy.types.UIList):
         elif self.layout_type in {"GRID"}:
             layout.alignment = "CENTER"
             layout.prop(item, "name",
-                        text=name, emboss=False, icon="SHADING_TEXTURE")   
+                        text=name, emboss=False, icon="SHADING_TEXTURE")
 
 
 class SOLLUMZ_PT_LIGHT_PANEL(bpy.types.Panel):
@@ -627,7 +620,6 @@ class SOLLUMZ_PT_TXTPARAMS_PANEL(bpy.types.Panel):
                 row = split.row()
                 row.enabled = n.image.filepath != ""
                 row.prop(n.texture_properties, "embedded")
-                row.prop(n.texture_properties, "extra_flags")
                 row.prop(n.image.colorspace_settings, "name", text="Color Space")
 
 

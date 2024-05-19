@@ -129,6 +129,15 @@ class LODLevel(str, Enum):
     VERYHIGH = "sollumz_veryhigh"
 
 
+LODLevelEnumItems = (
+    (LODLevel.HIGH, "High", "", 0),
+    (LODLevel.MEDIUM, "Medium", "", 1),
+    (LODLevel.LOW, "Low", "", 2),
+    (LODLevel.VERYLOW, "Very Low", "", 3),
+    (LODLevel.VERYHIGH, "Very High", "", 4),
+)
+
+
 class EntityLodLevel(str, Enum):
     LODTYPES_DEPTH_HD = "sollumz_lodtypes_depth_hd"
     LODTYPES_DEPTH_LOD = "sollumz_lodtypes_depth_lod"
@@ -382,7 +391,7 @@ SOLLUMZ_UI_NAMES = {
 
     LODLevel.VERYHIGH: "Very High",
     LODLevel.HIGH: "High",
-    LODLevel.MEDIUM: "Med",
+    LODLevel.MEDIUM: "Medium",
     LODLevel.LOW: "Low",
     LODLevel.VERYLOW: "Very Low",
 
@@ -478,8 +487,10 @@ class FlagPropertyGroup:
 
         flags = int_to_bool_list(int(self.total), size=self.size)
         for index, flag_name in enumerate(self.__annotations__):
-            if index < 32:
-                self[flag_name] = flags[index]
+            if index >= self.size:
+                break
+
+            self[flag_name] = flags[index]
 
     def update_flag(self, context):
         flags = flag_prop_to_list(self.__class__, self, size=self.size)
@@ -518,6 +529,7 @@ time_items = [("0", "12:00 AM", ""),
 
 
 class TimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
+    size = 24
     hour1: bpy.props.BoolProperty(
         name="12:00 AM - 1:00 AM", update=FlagPropertyGroup.update_flag)
     hour2: bpy.props.BoolProperty(
@@ -566,22 +578,6 @@ class TimeFlags(FlagPropertyGroup, bpy.types.PropertyGroup):
         name="10:00 PM - 11:00 PM", update=FlagPropertyGroup.update_flag)
     hour24: bpy.props.BoolProperty(
         name="11:00 PM - 12:00 AM", update=FlagPropertyGroup.update_flag)
-    unk1: bpy.props.BoolProperty(
-        name="Unknown 1", update=FlagPropertyGroup.update_flag)
-    unk2: bpy.props.BoolProperty(
-        name="Unknown 2", update=FlagPropertyGroup.update_flag)
-    unk3: bpy.props.BoolProperty(
-        name="Unknown 3", update=FlagPropertyGroup.update_flag)
-    unk4: bpy.props.BoolProperty(
-        name="Unknown 4", update=FlagPropertyGroup.update_flag)
-    unk5: bpy.props.BoolProperty(
-        name="Unknown 5", update=FlagPropertyGroup.update_flag)
-    unk6: bpy.props.BoolProperty(
-        name="Unknown 6", update=FlagPropertyGroup.update_flag)
-    unk7: bpy.props.BoolProperty(
-        name="Unknown 7", update=FlagPropertyGroup.update_flag)
-    unk8: bpy.props.BoolProperty(
-        name="Unknown 8", update=FlagPropertyGroup.update_flag)
 
     time_flags_start: bpy.props.EnumProperty(
         items=time_items, name="Time Start")

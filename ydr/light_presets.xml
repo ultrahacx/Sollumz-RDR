@@ -26,11 +26,7 @@
       <CoronaSize value="3" />
       <CoronaIntensity value="0.1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
-      <ConeInnerAngle value="0" />
-      <ConeOuterAngle value="0" />
       <Extent x="1.0" y="1.0" z="1.0" />
     </Item>
     <Item name="Point: Wall Light 1">
@@ -58,11 +54,7 @@
       <CoronaSize value="0" />
       <CoronaIntensity value="1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
-      <ConeInnerAngle value="0" />
-      <ConeOuterAngle value="0" />
       <Extent x="1.0" y="1.0" z="1.0" />
     </Item>
     <Item name="Spot: Wall Light 1">
@@ -91,11 +83,7 @@
       <CoronaSize value="0.3" />
       <CoronaIntensity value="0.1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
-      <ConeInnerAngle value="0" />
-      <ConeOuterAngle value="0" />
       <Extent x="1.0" y="1.0" z="1.0" />
     </Item>
     <Item name="Point: Wall Light 2">
@@ -123,11 +111,7 @@
       <CoronaSize value="0" />
       <CoronaIntensity value="1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
-      <ConeInnerAngle value="0" />
-      <ConeOuterAngle value="0" />
       <Extent x="1.0" y="1.0" z="1.0" />
     </Item>
     <Item name="Spot: Wall Light 2">
@@ -156,11 +140,7 @@
       <CoronaSize value="3" />
       <CoronaIntensity value="0.1" />
       <CoronaZBias value="0.1" />
-      <Unknown45 value="0" />
-      <Unknown46 value="0" />
       <ShadowBlur value="0" />
-      <ConeInnerAngle value="0" />
-      <ConeOuterAngle value="0" />
       <Extent x="1.0" y="1.0" z="1.0" />
     </Item>
   </LightPresets>

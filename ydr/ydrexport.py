@@ -155,22 +155,27 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
     for model_obj in model_objs:
         transforms_to_apply = get_export_transforms_to_apply(model_obj)
 
-        for lod in model_obj.sollumz_lods.lods:
-            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
+        lods = model_obj.sz_lods
+        for lod_level in LODLevel:
+            if lod_level == LODLevel.VERYHIGH:
                 continue
 
-            model_xml = create_model_xml(
-                model_obj, lod.level, materials, bones, transforms_to_apply)
+            lod = lods.get_lod(lod_level)
+            if lod.mesh is None:
+                continue
 
+            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply)
             if not model_xml.geometries:
                 continue
 
-            append_model_xml(drawable_xml, model_xml, lod.level)
+            append_model_xml(drawable_xml, model_xml, lod_level)
 
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
     # drawable can be split by vertex group, we have to join each separate part into a single object.
-    # join_skinned_models_for_each_lod(drawable_xml)
-    # split_drawable_by_vert_count(drawable_xml)
+    # TODO RDR
+    if current_game == SollumzGame.GTA:
+        join_skinned_models_for_each_lod(drawable_xml)
+        split_drawable_by_vert_count(drawable_xml)
 
 
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
@@ -742,19 +747,6 @@ def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: D
             drawable_xml.shader_group.texture_dictionary.textures = texture_dictionary
         else:
             delattr(drawable_xml.shader_group, "texture_dictionary")
-    if current_game == SollumzGame.GTA:
-        drawable_xml.shader_group.unknown_30 = calc_shadergroup_unk30(len(shaders))
-
-
-def calc_shadergroup_unk30(num_shaders: int):
-    # Its still unknown what unk30 actually is. But for 98% of files it can be
-    # calculated like this. It follows this pattern:
-    # (ShaderCount: 1, Unk30: 8), (ShaderCount: 2, Unk30: 11), (ShaderCount: 3, Unk30: 15),
-    # (ShaderCount: 4, Unk30: 18)... Unk30 increases by 3 for odd shader counts and 4 for even shader counts
-    if num_shaders % 2 == 0:
-        return int((0.5 * num_shaders) * 7 + 4)
-
-    return int((0.5 * (num_shaders + 1)) * 7 + 1)
 
 
 def texture_dictionary_from_materials(materials: list[bpy.types.Material]):

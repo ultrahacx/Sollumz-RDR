@@ -246,11 +246,7 @@ class SOLLUMZ_OT_save_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         light_preset.corona_size = light_props.corona_size
         light_preset.corona_intensity = light_props.corona_intensity
         light_preset.corona_z_bias = light_props.corona_z_bias
-        light_preset.unknown_45 = light_props.unknown_45
-        light_preset.unknown_46 = light_props.unknown_46
         light_preset.shadow_blur = light_props.shadow_blur
-        light_preset.cone_inner_angle = light_props.cone_inner_angle
-        light_preset.cone_outer_angle = light_props.cone_outer_angle
         light_preset.extent = Vector(light_props.extent)
 
         light_presets.presets.append(light_preset)
@@ -315,11 +311,7 @@ class SOLLUMZ_OT_load_light_preset(SOLLUMZ_OT_base, bpy.types.Operator):
             light_props.corona_size = preset.corona_size
             light_props.corona_intensity = preset.corona_intensity
             light_props.corona_z_bias = preset.corona_z_bias
-            light_props.unknown_45 = preset.unknown_45
-            light_props.unknown_46 = preset.unknown_46
             light_props.shadow_blur = preset.shadow_blur
-            light_props.cone_inner_angle = preset.cone_inner_angle
-            light_props.cone_outer_angle = preset.cone_outer_angle
             light_props.extent = preset.extent
 
         self.message(f"Applied preset '{preset.name}' to {len(selected_lights)} light(s).")
@@ -1074,23 +1066,20 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
         if not lods:
             return {"CANCELLED"}
 
-        obj_lods: LODLevels = aobj.sollumz_lods
-
-        if not self.has_sollumz_lods(aobj):
-            obj_lods.add_empty_lods()
+        obj_lods: LODLevels = aobj.sz_lods
 
         decimate_step = context.scene.sollumz_auto_lod_decimate_step
         last_mesh = ref_mesh
 
         previous_mode = aobj.mode
-        previous_lod_level = obj_lods.active_lod.level
+        previous_lod_level = obj_lods.active_lod_level
 
         for lod_level in lods:
             mesh = last_mesh.copy()
             mesh.name = self.get_lod_mesh_name(aobj.name, lod_level)
 
-            obj_lods.set_lod_mesh(lod_level, mesh)
-            obj_lods.set_active_lod(lod_level)
+            obj_lods.get_lod(lod_level).mesh = mesh
+            obj_lods.active_lod_level = lod_level
 
             bpy.ops.object.mode_set(mode="EDIT")
             bpy.ops.mesh.decimate(ratio=1.0 - decimate_step)
@@ -1098,14 +1087,9 @@ class SOLLUMZ_OT_auto_lod(bpy.types.Operator):
 
             last_mesh = mesh
 
-        obj_lods.set_active_lod(previous_lod_level)
+        obj_lods.active_lod_level = previous_lod_level
 
         return {"FINISHED"}
-
-    def has_sollumz_lods(self, obj: bpy.types.Object):
-        """Ensure obj has sollumz_lods.lods populated"""
-        obj_lod_levels = [lod.level for lod in obj.sollumz_lods.lods]
-        return all(lod_level in obj_lod_levels for lod_level in LODLevel)
 
     def get_lod_mesh_name(self, obj_name: str, lod_level: LODLevel):
         return f"{obj_name}.{SOLLUMZ_UI_NAMES[lod_level].lower()}"
@@ -1132,14 +1116,14 @@ class SOLLUMZ_OT_extract_lods(bpy.types.Operator):
         parent = self.create_parent(context, f"{aobj.name}.LODs")
         lod_levels = context.scene.sollumz_extract_lods_levels
 
+        lods = aobj.sz_lods
         for lod_level in lod_levels:
-            lod = aobj.sollumz_lods.get_lod(lod_level)
-
-            if lod is None or lod.mesh is None:
+            lod = lods.get_lod(lod_level)
+            lod_mesh = lod.mesh
+            if lod_mesh is None:
                 continue
 
-            mesh = lod.mesh
-            lod_obj = create_blender_object(SollumType.NONE, mesh.name, mesh)
+            lod_obj = create_blender_object(SollumType.NONE, lod_mesh.name, lod_mesh)
             self.parent_object(lod_obj, parent)
 
         return {"FINISHED"}

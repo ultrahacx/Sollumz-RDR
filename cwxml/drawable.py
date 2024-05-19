@@ -414,7 +414,6 @@ class ShaderGroup(ElementTree):
     def __init__(self):
         super().__init__()
         if current_game == SollumzGame.GTA:
-            self.unknown_30 = ValueProperty("Unknown30", 0)
             self.texture_dictionary = TextureDictionaryList()
         elif current_game == SollumzGame.RDR:
             self.texture_dictionary = RDRTextureDictionaryList()
@@ -864,7 +863,8 @@ class Drawable(ElementTree, AbstractClass):
         self.matrices = DrawableMatrices("Matrices")
 
         self.name = TextProperty("Name", "")
-        self.hash = TextProperty("Hash", "")
+        if current_game == SollumzGame.RDR:
+            self.hash = TextProperty("Hash", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
         self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
@@ -913,8 +913,6 @@ class Drawable(ElementTree, AbstractClass):
                 bound_type = child.get("type")
                 bound = None
                 if bound_type == "Composite":
-                    bound = BoundFile.from_xml(child).composite
-                if bound_type == "Composite":
                     bound = BoundComposite.from_xml(child)
                 elif bound_type == "Box":
                     bound = BoundBox.from_xml(child)
@@ -932,7 +930,7 @@ class Drawable(ElementTree, AbstractClass):
                     bound = BoundGeometry.from_xml(child)
                 elif bound_type == "GeometryBVH":
                     bound = BoundGeometryBVH.from_xml(child)
-
+                    
                 if bound:
                     bound.tag_name = "Bounds"
                     new.bounds.append(bound)
@@ -948,6 +946,7 @@ class Drawable(ElementTree, AbstractClass):
                 if bound:
                     bound.tag_name = "Bounds"
                     new.bounds.append(bound)
+       
         return new
 
     def to_xml(self):

@@ -262,19 +262,19 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
     cptn.domain = "CORNER"
     cptn.data_type = "FLOAT_COLOR"
-    gnt.links.new(input.outputs[0], cptn.inputs[0])
-    gnt.links.new(cptn.outputs[0], output.inputs[0])
+    gnt.links.new(input.outputs["Geometry"], cptn.inputs["Geometry"])
+    gnt.links.new(cptn.outputs["Geometry"], output.inputs["Geometry"])
 
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
     txtn.interpolation = "Closest"
-    gnt.links.new(input.outputs[4], txtn.inputs[0])
-    gnt.links.new(cptn.outputs[3], txtn.inputs[1])
-    gnt.links.new(txtn.outputs[0], output.inputs[1])
+    gnt.links.new(input.outputs["Palette Texture"], txtn.inputs["Image"])
+    gnt.links.new(cptn.outputs["Attribute"], txtn.inputs["Vector"])
+    gnt.links.new(txtn.outputs["Color"], output.inputs["Tint Color"])
 
     # separate colour0
     sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
-    gnt.links.new(input.outputs[1], sepn.inputs[0])
+    gnt.links.new(input.outputs["Color Attribute"], sepn.inputs["Vector"])
 
     # create math nodes
     mathns = []
@@ -334,16 +334,16 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_flip_uv_mult.operation = "MULTIPLY"
     pal_flip_uv_mult.inputs[1].default_value = -1.0
 
-    gnt.links.new(input.outputs[4], pal_img_info.inputs[0])
-    gnt.links.new(input.outputs[3], pal_add.inputs[1])
+    gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
+    gnt.links.new(input.outputs["Palette H (Preview)"], pal_add.inputs[1])
     gnt.links.new(pal_add.outputs[0], pal_div.inputs[0])
-    gnt.links.new(pal_img_info.outputs[1], pal_div.inputs[1])
+    gnt.links.new(pal_img_info.outputs["Height"], pal_div.inputs[1])
     gnt.links.new(pal_div.outputs[0], pal_flip_uv_sub.inputs[0])
     gnt.links.new(pal_flip_uv_sub.outputs[0], pal_flip_uv_mult.inputs[0])
 
     preview = gnt.nodes.new("ShaderNodeMath")
     preview.operation = "DIVIDE"
-    gnt.links.new(input.outputs[2], preview.inputs[0])
+    gnt.links.new(input.outputs["Palette W (Preview)"], preview.inputs[0])
     preview.inputs[1].default_value = 256
 
     compare = gnt.nodes.new("FunctionNodeCompare")
@@ -360,7 +360,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     comb = gnt.nodes.new("ShaderNodeCombineRGB")
     gnt.links.new(switch.outputs[0], comb.inputs[0])
     gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
-    gnt.links.new(comb.outputs[0], cptn.inputs[3])
+    gnt.links.new(comb.outputs[0], cptn.inputs["Value"])
 
     return gnt
 
@@ -436,6 +436,8 @@ def create_parameter_node(
             node.extra_property.offset = param.offset
         elif param.type == ShaderParameterType.SAMPLER:
             node.extra_property.index = param.index
+
+    return node
 
 
 def link_diffuse(b: ShaderBuilder, imgnode):

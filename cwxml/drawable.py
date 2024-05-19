@@ -789,7 +789,7 @@ class Geometry(ElementTree):
         elif current_game == SollumzGame.RDR:
             self.shader_index = ValueProperty("ShaderID", 0)
             self.colour_semantic = ValueProperty("ColourSemantic", 0)
-            self.bone_index = ValueProperty("BoneIndex", 0)
+            self.bone_index = ValueProperty("BoneIndex", -1)
             self.bone_count = ValueProperty("BonesCount", 0)
             self.vertex_layout = VertexLayout()
             self.vertices = VerticesProperty("Vertices")

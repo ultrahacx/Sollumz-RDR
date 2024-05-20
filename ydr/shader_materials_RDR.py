@@ -7,7 +7,7 @@ from ..cwxml.shader import (
     ShaderParameterType,
 )
 
-from .shader_materials_SHARED import ShaderBuilder, create_image_node, create_parameter_node, link_value_shader_parameters, link_normal, try_get_node, link_diffuse, create_decal_nodes
+from .shader_materials_SHARED import ShaderBuilder, create_image_node, create_parameter_node, link_value_shader_parameters, link_normal, try_get_node, link_diffuse, create_decal_nodes, get_uv_map_name
 
 
 def create_tint_nodes(
@@ -22,12 +22,7 @@ def create_tint_nodes(
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     attr.attribute_name = "TintColor"
     mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    # hacky shit here for now
-    is_fully_black = all(value == 0.0 for value in attr.outputs[0].default_value)
-    if is_fully_black:
-        mix.inputs["Fac"].default_value = 0.0
-    else:
-        mix.inputs["Fac"].default_value = 0.95
+    mix.name = "tint_mix_node"
     mix.blend_type = "MULTIPLY"
     links.new(attr.outputs["Color"], mix.inputs[2])
     links.new(diffuse_tex.outputs[0], mix.inputs[1])
@@ -224,6 +219,7 @@ def link_diffuses(b: ShaderBuilder, tex1, tex2):
 
     rgb2 = node_tree.nodes.new("ShaderNodeMixRGB")
 
+    rgb2.blend_type = "OVERLAY"
     links.new(tex1.outputs["Color"], rgb2.inputs["Color1"])
     links.new(tex2.outputs["Color"], rgb2.inputs["Color2"])
     links.new(dirt_mix.outputs["Color"], rgb2.inputs["Fac"])
@@ -247,6 +243,8 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     lyr1normaltex = None
     lyr0materialatex = None
     lyr1materialatex = None
+    lyr0materialbtex = None
+    lyr1materialbtex = None
     dirtdiffusetex = None
     controltexturetex = None
     aotexturetex = None
@@ -270,6 +268,10 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
                     lyr0materialatex = imgnode
                 elif param.name == "lyr1materialatex":
                     lyr1materialatex = imgnode
+                elif param.name == "lyr0materialbtex":
+                    lyr0materialbtex = imgnode
+                elif param.name == "lyr1materialbtex":
+                    lyr1materialbtex = imgnode
                 elif param.name == "dirtdiffusetex":
                     dirtdiffusetex = imgnode
                 elif param.name == "controltexturetex":
@@ -303,29 +305,40 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     links.new(vertex_color2_node.outputs["Color"], separate_rgb.inputs["Color"])
 
     control_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    control_mix.inputs["Fac"].default_value = 0.5
+    control_mix.inputs["Fac"].default_value = 1
     links.new(controltexturetex.outputs["Color"], control_mix.inputs["Color1"])
     links.new(separate_rgb.outputs["Red"], control_mix.inputs["Color2"])
-
-    color_ramp = node_tree.nodes.new('ShaderNodeValToRGB')
-    color_ramp.color_ramp.elements[0].position = 0.0
-    color_ramp.color_ramp.elements[1].position = 0.5
-    links.new(control_mix.outputs["Color"], color_ramp.inputs["Fac"])
 
     # Mix diffuses by vertex color
     diff_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     links.new(lyr0diffusetex.outputs["Color"], diff_lyr_mix.inputs["Color1"])
     links.new(lyr1diffusetex.outputs["Color"], diff_lyr_mix.inputs["Color2"])
-    links.new(color_ramp.outputs["Color"], diff_lyr_mix.inputs["Fac"])
+    links.new(control_mix.outputs["Color"], diff_lyr_mix.inputs["Fac"])
+
+    # Mix _mb by vertex color
+    matb_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
+    links.new(lyr0materialbtex.outputs["Color"], matb_lyr_mix.inputs["Color1"])
+    links.new(lyr1materialbtex.outputs["Color"], matb_lyr_mix.inputs["Color2"])
+    links.new(control_mix.outputs["Color"], matb_lyr_mix.inputs["Fac"])
+
+    materialb_rgb = node_tree.nodes.new(type='ShaderNodeSeparateColor')
+    links.new(matb_lyr_mix.outputs["Color"], materialb_rgb.inputs["Color"])
+
 
     # Apply tint before dirt diffuse
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     attr.attribute_name = "TintColor"
     tint_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    tint_mix.inputs["Fac"].default_value = 0.95
+    tint_mix.name = "tint_mix_node"
     tint_mix.blend_type = "MULTIPLY"
     links.new(attr.outputs["Color"], tint_mix.inputs[2])
     links.new(diff_lyr_mix.outputs[0], tint_mix.inputs[1])
+
+    #Mix tint with not tinted by mb blue
+    matb_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
+    links.new(diff_lyr_mix.outputs[0], matb_lyr_mix.inputs["Color1"])
+    links.new(tint_mix.outputs["Color"], matb_lyr_mix.inputs["Color2"])
+    links.new(materialb_rgb.outputs["Blue"], matb_lyr_mix.inputs["Fac"])
 
     # Mix dirt by vertex alpha
     dirt_mix = node_tree.nodes.new("ShaderNodeMixRGB")
@@ -336,7 +349,8 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
 
     # Mix tinted diffuse with dirt
     lyr_dirt_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    links.new(tint_mix.outputs["Color"], lyr_dirt_mix.inputs["Color1"])
+    lyr_dirt_mix.blend_type = "OVERLAY"
+    links.new(matb_lyr_mix.outputs["Color"], lyr_dirt_mix.inputs["Color1"])
     links.new(dirtdiffusetex.outputs["Color"], lyr_dirt_mix.inputs["Color2"])
     links.new(dirt_mix.outputs["Color"], lyr_dirt_mix.inputs["Fac"])
 
@@ -344,7 +358,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     mata_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     links.new(lyr0materialatex.outputs["Color"], mata_lyr_mix.inputs["Color1"])
     links.new(lyr1materialatex.outputs["Color"], mata_lyr_mix.inputs["Color2"])
-    links.new(color_ramp.outputs["Color"], mata_lyr_mix.inputs["Fac"])
+    links.new(control_mix.outputs["Color"], mata_lyr_mix.inputs["Fac"])
 
     # Separate mixed _ma and link
     materiala_rgb = node_tree.nodes.new(type='ShaderNodeSeparateColor')
@@ -364,8 +378,129 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     normal_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     links.new(lyr0normaltex.outputs["Color"], normal_lyr_mix.inputs["Color1"])
     links.new(lyr1normaltex.outputs["Color"], normal_lyr_mix.inputs["Color2"])
-    links.new(color_ramp.outputs["Color"], normal_lyr_mix.inputs["Fac"])
+    links.new(control_mix.outputs["Color"], normal_lyr_mix.inputs["Fac"])
     link_normal(b, normal_lyr_mix)
+
+    # link value parameters
+    bsdf.inputs["Specular IOR Level"].default_value = 0
+    link_value_shader_parameters(b)
+
+
+
+def RDR_create_terrain_shader(b: ShaderBuilder):
+    shader = b.shader
+    filename = b.filename
+    mat = b.material
+    node_tree = b.node_tree
+    bsdf = b.bsdf
+    links = node_tree.links
+
+    ts1 = None
+    ts2 = None
+    ts3 = None
+    ts4 = None
+    bs1 = None
+    bs2 = None
+    bs3 = None
+    bs4 = None
+    tm = None
+
+    for param in shader.parameters:
+        match param.type:
+            case ShaderParameterType.TEXTURE:
+                imgnode = create_image_node(node_tree, param)
+                imgnode.texture_properties.index = param.index
+                imgnode.texture_properties.game_type = SollumzGame.RDR
+                if param.name == "diffusetexture_layer0":
+                    ts1 = imgnode
+                elif param.name == "diffusetexture_layer1":
+                    ts2 = imgnode
+                elif param.name == "diffusetexture_layer2":
+                    ts3 = imgnode
+                elif param.name == "diffusetexture_layer3":
+                    ts4 = imgnode
+                elif param.name == "bumptexture_layer0":
+                    bs1 = imgnode
+                elif param.name == "bumptexture_layer1":
+                    bs2 = imgnode
+                elif param.name == "bumptexture_layer2":
+                    bs3 = imgnode
+                elif param.name == "bumptexture_layer3":
+                    bs4 = imgnode
+                elif param.name == "lookuptexture":
+                    tm = imgnode
+            case (ShaderParameterType.FLOAT |
+                    ShaderParameterType.FLOAT2 |
+                    ShaderParameterType.FLOAT3 |
+                    ShaderParameterType.FLOAT4 |
+                    ShaderParameterType.FLOAT4X4 |
+                    ShaderParameterType.SAMPLER |
+                    ShaderParameterType.CBUFFER):
+                    create_parameter_node(node_tree, param)
+            case ShaderParameterType.UNKNOWN:
+                    continue
+    mixns = []
+    for _ in range(8 if tm else 7):
+        mix = node_tree.nodes.new("ShaderNodeMixRGB")
+        mixns.append(mix)
+
+    seprgb = node_tree.nodes.new("ShaderNodeSeparateRGB")
+    if filename in ShaderManager.mask_only_terrains:
+        links.new(tm.outputs[0], seprgb.inputs[0])
+    else:
+        # attr_c1 = node_tree.nodes.new("ShaderNodeAttribute")
+        # attr_c1.attribute_name = "Color 2"
+        # links.new(attr_c1.outputs[0], mixns[0].inputs[1])
+        # links.new(attr_c1.outputs[0], mixns[0].inputs[2])
+
+        attr_c0 = node_tree.nodes.new("ShaderNodeAttribute")
+        attr_c0.attribute_name = "Color 1"
+        links.new(attr_c0.outputs[3], mixns[0].inputs[0])
+        links.new(attr_c0.outputs[0], mixns[0].inputs[2])
+        links.new(mixns[0].outputs[0], seprgb.inputs[0])
+
+    # t1 / t2
+
+    invert_red = node_tree.nodes.new("ShaderNodeInvert")
+    links.new(seprgb.outputs[0], invert_red.inputs[1])
+
+    links.new(invert_red.outputs[0], mixns[1].inputs[0])
+    links.new(ts1.outputs[0], mixns[1].inputs[1])
+    links.new(ts2.outputs[0], mixns[1].inputs[2])
+
+    # t3 / t4
+    links.new(seprgb.outputs[1], mixns[2].inputs[0])
+    links.new(ts3.outputs[0], mixns[2].inputs[1])
+    links.new(ts4.outputs[0], mixns[2].inputs[2])
+
+    links.new(seprgb.outputs[2], mixns[3].inputs[0])
+    links.new(mixns[1].outputs[0], mixns[3].inputs[1])
+    links.new(mixns[2].outputs[0], mixns[3].inputs[2])
+
+    links.new(mixns[3].outputs[0], bsdf.inputs["Base Color"])
+
+    if bs1:
+        links.new(invert_red.outputs[0], mixns[4].inputs[0])
+        links.new(bs1.outputs[0], mixns[4].inputs[1])
+        links.new(bs2.outputs[0], mixns[4].inputs[2])
+
+        links.new(seprgb.outputs[1], mixns[5].inputs[0])
+        links.new(bs3.outputs[0], mixns[5].inputs[1])
+        links.new(bs4.outputs[0], mixns[5].inputs[2])
+
+        links.new(seprgb.outputs[2], mixns[6].inputs[0])
+        links.new(mixns[4].outputs[0], mixns[6].inputs[1])
+        links.new(mixns[5].outputs[0], mixns[6].inputs[2])
+
+        nrm = node_tree.nodes.new("ShaderNodeNormalMap")
+        links.new(mixns[6].outputs[0], nrm.inputs[1])
+        links.new(nrm.outputs[0], bsdf.inputs["Normal"])
+
+    # assign lookup sampler last so that it overwrites any socket connections
+    if tm:
+        uv_map1 = node_tree.nodes[get_uv_map_name(0)]
+        links.new(uv_map1.outputs[0], tm.inputs[0])
+        links.new(tm.outputs[0], mixns[0].inputs[1])
 
     # link value parameters
     bsdf.inputs["Specular IOR Level"].default_value = 0

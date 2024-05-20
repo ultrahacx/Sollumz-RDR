@@ -11,7 +11,7 @@ from ..tools.animationhelper import add_global_anim_uv_nodes
 from ..tools.meshhelper import get_uv_map_name
 
 from .shader_materials_SHARED import *
-from .shader_materials_RDR import RDR_create_basic_shader_nodes, RDR_create_2lyr_shader
+from .shader_materials_RDR import RDR_create_basic_shader_nodes, RDR_create_2lyr_shader, RDR_create_terrain_shader
 
 
 class ShaderMaterial(NamedTuple):
@@ -578,6 +578,8 @@ def create_shader(filename: str, game: SollumzGame = SollumzGame.GTA):
         create_terrain_shader(builder)
     elif filename in ShaderManager.rdr_standard_2lyr:
          RDR_create_2lyr_shader(builder)
+    elif filename in ShaderManager.rdr_terrains:
+         RDR_create_terrain_shader(builder)
     else:
         if game == SollumzGame.GTA:
             create_basic_shader_nodes(builder)

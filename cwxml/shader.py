@@ -350,6 +350,14 @@ class ShaderManager:
 
     rdr_standard_2lyr = ["standard_2lyr", "standard_2lyr_ground", "standard_2lyr_pxm", "standard_2lyr_pxm_ground", "standard_2lyr_tnt", 
             "campfire_standard_2lyr"]
+    
+    rdr_terrains = ["terrain_uber_4lyr_pxm_hbb", "terrain_uber_4lyr_spx_dm_hbb", "terrain_uber_4lyr_snow_dm_hbb", 
+                    "terrain_uber_4lyr", "terrain_uber_4lyr_hbb", "terrain_uber_4lyr_mud", 
+                    "terrain_uber_4lyr_mud_dm_hbb", "terrain_uber_4lyr_pxm", "terrain_uber_4lyr_quicksand_dm_hbb", 
+                    "terrain_uber_4lyr_snowglt_pxm_hbb", "terrain_uber_4lyr_snowglt_spx_dm_hbb", 
+                    "terrain_uber_4lyr_spx_dm_hbb_1221", "terrain_uber_4lyr_spx_dm_hbb_2111", 
+                    "terrain_uber_4lyr_spx_dm_hbb_2221", "terrain_uber_3+1lyr_snow_dm_hbb", 
+                    "terrain_uber_4lyr_spx_dm_hbb_1111", "terrain_uber_4lyr_spx_dm_hbb_1121"]
 
     rdr_standard_alphas = ["standard_dirt_alpha"]
     rdr_standard_glasses = ["standard_glass_breakable", "standard_glass_fp", "standard_glass"]

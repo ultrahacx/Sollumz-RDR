@@ -174,17 +174,19 @@ def create_tinted_shader_graph(obj: bpy.types.Object):
 
         rename_tint_attr_node(mat.node_tree, name=tint_color_attr.name)
 
-        create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img)
+        create_tint_geom_modifier(obj, tint_color_attr.name, input_color_attr_name, palette_img, mat.name)
 
 
 def create_tint_geom_modifier(
     obj: bpy.types.Object,
     tint_color_attr_name: str,
     input_color_attr_name: Optional[str],
-    palette_img: Optional[bpy.types.Image]
+    palette_img: Optional[bpy.types.Image],
+    shader_name: str,
 ) -> bpy.types.NodesModifier:
     tnt_ng = create_tinted_geometry_graph()
     mod = obj.modifiers.new("GeometryNodes", "NODES")
+    mod.name = shader_name
     mod.node_group = tnt_ng
 
     # set input / output variables
@@ -243,10 +245,15 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="INPUT")
     gnt.interface.new_socket("Geometry", socket_type="NodeSocketGeometry", in_out="OUTPUT")
     gnt.interface.new_socket("Color Attribute", socket_type="NodeSocketVector", in_out="INPUT")
-    in_palette = gnt.interface.new_socket("Palette (Preview)",
+    in_palette = gnt.interface.new_socket("Palette W (Preview)",
                                           description="Index of the tint palette to preview. Has no effect on export",
                                           socket_type="NodeSocketInt", in_out="INPUT")
     in_palette.min_value = 0
+    in_palette2 = gnt.interface.new_socket("Palette H (Preview)",
+                                          description="Index of the tint palette to preview. Has no effect on export",
+                                          socket_type="NodeSocketInt", in_out="INPUT")
+    in_palette2.min_value = 0
+   
     gnt.interface.new_socket("Palette Texture", description="Should be the same as 'TintPaletteSampler' of the material",
                              socket_type="NodeSocketImage", in_out="INPUT")
     gnt.interface.new_socket("Tint Color", socket_type="NodeSocketColor", in_out="OUTPUT")
@@ -261,7 +268,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
     txtn.interpolation = "Closest"
-    gnt.links.new(input.outputs[3], txtn.inputs[0])
+    gnt.links.new(input.outputs[4], txtn.inputs[0])
     gnt.links.new(cptn.outputs[3], txtn.inputs[1])
     gnt.links.new(txtn.outputs[0], output.inputs[1])
 
@@ -327,16 +334,31 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_flip_uv_mult.operation = "MULTIPLY"
     pal_flip_uv_mult.inputs[1].default_value = -1.0
 
-    gnt.links.new(input.outputs[3], pal_img_info.inputs[0])
-    gnt.links.new(input.outputs[2], pal_add.inputs[1])
+    gnt.links.new(input.outputs[4], pal_img_info.inputs[0])
+    gnt.links.new(input.outputs[3], pal_add.inputs[1])
     gnt.links.new(pal_add.outputs[0], pal_div.inputs[0])
     gnt.links.new(pal_img_info.outputs[1], pal_div.inputs[1])
     gnt.links.new(pal_div.outputs[0], pal_flip_uv_sub.inputs[0])
     gnt.links.new(pal_flip_uv_sub.outputs[0], pal_flip_uv_mult.inputs[0])
 
+    preview = gnt.nodes.new("ShaderNodeMath")
+    preview.operation = "DIVIDE"
+    gnt.links.new(input.outputs[2], preview.inputs[0])
+    preview.inputs[1].default_value = 256
+
+    compare = gnt.nodes.new("FunctionNodeCompare")
+    compare.data_type = "FLOAT"
+    gnt.links.new(preview.outputs[0], compare.inputs[0])
+
+    switch = gnt.nodes.new("GeometryNodeSwitch")
+    switch.input_type = "FLOAT"
+    gnt.links.new(compare.outputs[0], switch.inputs[0])
+    gnt.links.new(preview.outputs[0], switch.inputs[3])
+    gnt.links.new(mathns[8].outputs[0], switch.inputs[2])
+
     # create and link vector
     comb = gnt.nodes.new("ShaderNodeCombineRGB")
-    gnt.links.new(mathns[8].outputs[0], comb.inputs[0])
+    gnt.links.new(switch.outputs[0], comb.inputs[0])
     gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
     gnt.links.new(comb.outputs[0], cptn.inputs[3])
 
@@ -546,6 +568,7 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
     shader = b.shader
     node_tree = b.node_tree
 
+
     for tex_name, uv_map_index in shader.uv_maps.items():
         tex_node = node_tree.nodes[tex_name]
         uv_map_node = node_tree.nodes[get_uv_map_name(uv_map_index)]
@@ -554,4 +577,14 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
             # texture already linked when creating the node tree, skip it
             continue
 
-        node_tree.links.new(uv_map_node.outputs[0], tex_node.inputs[0])
+        if tex_name in ("diffusetexture_layer0", "diffusetexture_layer1", "diffusetexture_layer2", "diffusetexture_layer3"):
+            vector_math = node_tree.nodes.new("ShaderNodeVectorMath")
+            vector_math.operation = 'MULTIPLY'
+            vector_math.name = 'Multiply'
+            vector_math.inputs[1].default_value = (128,128,128)
+
+            node_tree.links.new(uv_map_node.outputs[0], vector_math.inputs[0])
+            node_tree.links.new(vector_math.outputs[0], tex_node.inputs[0])
+
+        else:
+            node_tree.links.new(uv_map_node.outputs[0], tex_node.inputs[0])

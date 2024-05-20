@@ -90,9 +90,9 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     drawable_xml = Drawable(tag_name)
     drawable_xml.matrix = None
 
-    if SollumzGame.GTA:
+    if current_game == SollumzGame.GTA:
         drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
-    elif SollumzGame.RDR:
+    elif current_game == SollumzGame.RDR:
         obj_parent = find_sollumz_parent(drawable_obj, SollumType.DRAWABLE_DICTIONARY)
         if obj_parent is not None:
             drawable_xml.name = remove_number_suffix(obj_parent.name.lower())

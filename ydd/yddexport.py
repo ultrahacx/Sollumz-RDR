@@ -50,7 +50,11 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
         elif current_game == SollumzGame.RDR:
             ydd_xml.drawables.append(drawable_xml)
 
-    ydd_xml.sort(key=get_hash)
+    if current_game == SollumzGame.GTA:
+        ydd_xml.sort(key=get_hash)
+    elif current_game == SollumzGame.RDR:
+        ydd_xml.drawables.sort(key=get_hash)
+   
 
     return ydd_xml
 

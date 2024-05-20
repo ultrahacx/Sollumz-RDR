@@ -579,7 +579,7 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
             # texture already linked when creating the node tree, skip it
             continue
 
-        if tex_name in ("diffusetexture_layer0", "diffusetexture_layer1", "diffusetexture_layer2", "diffusetexture_layer3"):
+        if tex_name in ("diffusetexture_layer0", "diffusetexture_layer1", "diffusetexture_layer2", "diffusetexture_layer3", "bumptexture_layer0", "bumptexture_layer1", "bumptexture_layer2", "bumptexture_layer3"):
             vector_math = node_tree.nodes.new("ShaderNodeVectorMath")
             vector_math.operation = 'MULTIPLY'
             vector_math.name = 'Multiply'

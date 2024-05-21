@@ -183,8 +183,10 @@ class SOLLUMZ_UL_COLLISION_MATERIALS_LIST(bpy.types.UIList):
     def draw_item(
         self, context, layout, data, item, icon, active_data, active_propname, index
     ):
-        name = collisionmats[item.index].ui_name
-        if item.game == SollumzGame.RDR:
+        
+        if item.game == SollumzGame.GTA:
+            name = collisionmats[item.index].ui_name
+        elif item.game == SollumzGame.RDR:
             name = rdr_collisionmats[item.index].ui_name
         
         if self.layout_type in {"DEFAULT", "COMPACT"}:

@@ -221,7 +221,7 @@ def load_flag_presets():
 
 
 def load_collision_materials():
-    sollum_game_type = bpy.context.scene.sollum_shader_game_type
+    sollum_game_type = bpy.context.scene.sollum_collision_material_game_type
     materials = collisionmats
     game = "sollumz_gta5"
     if sollum_game_type == SollumzGame.RDR:

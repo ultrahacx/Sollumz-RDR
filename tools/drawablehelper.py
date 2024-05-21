@@ -231,6 +231,7 @@ def convert_obj_to_drawable(obj: bpy.types.Object, sollum_game_type: SollumzGame
 
 def convert_objs_to_single_drawable(objs: list[bpy.types.Object], sollum_game_type: SollumzGame):
     drawable_obj = create_empty_object(SollumType.DRAWABLE)
+    drawable_obj.sollum_game_type = sollum_game_type
 
     for obj in objs:
         convert_obj_to_model(obj, sollum_game_type)

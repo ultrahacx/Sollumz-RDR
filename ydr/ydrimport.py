@@ -378,20 +378,40 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                         n.image.filepath = "//" + param.texture_name + ".dds"
 
             elif isinstance(n, SzShaderNodeParameter):
-                if param.name == n.name and n.num_rows == 1:
-                    n.set("X", param.x)
-                    if n.num_cols > 1:
-                        n.set("Y", param.y)
-                    if n.num_cols > 2:
-                        n.set("Z", param.z)
-                    if n.num_cols > 3:
-                        n.set("W", param.w)
-                    
-                    if param.type == "CBuffer":
-                        n.extra_property.buffer = param.buffer
-                        n.extra_property.offset = param.offset
-                    elif param.type == "Sampler":
-                        n.extra_property.index = param.index
+                if current_game == SollumzGame.GTA:
+                    if param.name == n.name and n.num_rows == 1:
+                        n.set("X", param.x)
+                        if n.num_cols > 1:
+                            n.set("Y", param.y)
+                        if n.num_cols > 2:
+                            n.set("Z", param.z)
+                        if n.num_cols > 3:
+                            n.set("W", param.w)
+                        
+                        if param.type == "CBuffer":
+                            n.extra_property.buffer = param.buffer
+                            n.extra_property.offset = param.offset
+                        elif param.type == "Sampler":
+                            n.extra_property.index = param.index       
+
+                if current_game == SollumzGame.RDR:
+                    node_name_parts = n.name.split('_')
+                    node_name_suffix = node_name_parts[1].lower() if len(node_name_parts) > 1 else "unknown"
+         
+                    if (param.name == n.name or ("0x" in n.name and node_name_suffix in param.name.lower())) and n.num_rows == 1:
+                        n.set("X", param.x)
+                        if n.num_cols > 1:
+                            n.set("Y", param.y)
+                        if n.num_cols > 2:
+                            n.set("Z", param.z)
+                        if n.num_cols > 3:
+                            n.set("W", param.w)
+                        
+                        if param.type == "CBuffer":
+                            n.extra_property.buffer = param.buffer
+                            n.extra_property.offset = param.offset
+                        elif param.type == "Sampler":
+                            n.extra_property.index = param.index
 
     # assign extra detail node image for viewing
     dtl_ext = get_detail_extra_sampler(material)

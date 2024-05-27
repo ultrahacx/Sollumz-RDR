@@ -509,6 +509,8 @@ def link_value_shader_parameters(b: ShaderBuilder):
     spec_im = None
     spec_fm = None
     em_m = None
+    lyr0tint = None
+    lyr1tint = None
 
     for param in shader.parameters:
         if param.name == "bumpiness":
@@ -519,6 +521,12 @@ def link_value_shader_parameters(b: ShaderBuilder):
             spec_fm = node_tree.nodes["specularFalloffMult"]
         elif param.name == "emissiveMultiplier":
             em_m = node_tree.nodes["emissiveMultiplier"]
+        elif param.name == "lyr0tint":
+            lyr0tint = node_tree.nodes["lyr0tint"]
+        elif param.name == "lyr1tint":
+            lyr1tint = node_tree.nodes["lyr1tint"]
+
+
 
     if bmp:
         nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
@@ -549,6 +557,25 @@ def link_value_shader_parameters(b: ShaderBuilder):
         em = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeEmission)
         if em:
             links.new(em_m.outputs["X"], em.inputs[1])
+
+    if lyr0tint:
+        tint_mix_node0 = try_get_node(node_tree, "tint_mix_node0")
+        if tint_mix_node0:
+             
+            tint0_multiply = node_tree.nodes.new("ShaderNodeMath")
+            tint0_multiply.operation = "MULTIPLY"        
+            tint0_multiply.inputs[1].default_value = 0.95
+            links.new(lyr0tint.outputs["X"], tint0_multiply.inputs[0])
+            links.new(tint0_multiply.outputs[0], tint_mix_node0.inputs["Fac"])
+    if lyr1tint:
+        tint_mix_node1 = try_get_node(node_tree, "tint_mix_node1")
+        if tint_mix_node1:
+            tint1_multiply = node_tree.nodes.new("ShaderNodeMath")
+            tint1_multiply.operation = "MULTIPLY"        
+            tint1_multiply.inputs[1].default_value = 0.95
+            links.new(lyr1tint.outputs["X"], tint1_multiply.inputs[0])
+            links.new(tint1_multiply.outputs[0], tint_mix_node1.inputs["Fac"])
+
 
 
 def create_uv_map_nodes(b: ShaderBuilder):

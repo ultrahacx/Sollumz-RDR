@@ -317,12 +317,9 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
 
     # Mix _mb by vertex color
     matb_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    links.new(lyr0materialbtex.outputs["Color"], matb_lyr_mix.inputs["Color1"])
-    links.new(lyr1materialbtex.outputs["Color"], matb_lyr_mix.inputs["Color2"])
+    links.new(lyr0materialbtex.outputs["Alpha"], matb_lyr_mix.inputs["Color1"])
+    links.new(lyr1materialbtex.outputs["Alpha"], matb_lyr_mix.inputs["Color2"])
     links.new(control_mix.outputs["Color"], matb_lyr_mix.inputs["Fac"])
-
-    materialb_rgb = node_tree.nodes.new(type='ShaderNodeSeparateColor')
-    links.new(matb_lyr_mix.outputs["Color"], materialb_rgb.inputs["Color"])
 
 
     # Apply tint before dirt diffuse
@@ -332,13 +329,13 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     tint_mix.name = "tint_mix_node"
     tint_mix.blend_type = "MULTIPLY"
     links.new(attr.outputs["Color"], tint_mix.inputs[2])
-    links.new(diff_lyr_mix.outputs[0], tint_mix.inputs[1])
+    links.new(diff_lyr_mix.outputs["Color"], tint_mix.inputs[1])
 
     #Mix tint with not tinted by mb blue
-    matb_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    links.new(diff_lyr_mix.outputs[0], matb_lyr_mix.inputs["Color1"])
-    links.new(tint_mix.outputs["Color"], matb_lyr_mix.inputs["Color2"])
-    links.new(materialb_rgb.outputs["Blue"], matb_lyr_mix.inputs["Fac"])
+    matb_lyr_tint_mix = node_tree.nodes.new("ShaderNodeMixRGB")
+    links.new(diff_lyr_mix.outputs["Color"], matb_lyr_tint_mix.inputs["Color1"])
+    links.new(tint_mix.outputs["Color"], matb_lyr_tint_mix.inputs["Color2"])
+    links.new(matb_lyr_mix.outputs["Color"], matb_lyr_tint_mix.inputs["Fac"])
 
     # Mix dirt by vertex alpha
     dirt_mix = node_tree.nodes.new("ShaderNodeMixRGB")
@@ -350,7 +347,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     # Mix tinted diffuse with dirt
     lyr_dirt_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     lyr_dirt_mix.blend_type = "OVERLAY"
-    links.new(matb_lyr_mix.outputs["Color"], lyr_dirt_mix.inputs["Color1"])
+    links.new(matb_lyr_tint_mix.outputs["Color"], lyr_dirt_mix.inputs["Color1"])
     links.new(dirtdiffusetex.outputs["Color"], lyr_dirt_mix.inputs["Color2"])
     links.new(dirt_mix.outputs["Color"], lyr_dirt_mix.inputs["Fac"])
 

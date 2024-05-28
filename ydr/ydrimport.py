@@ -421,10 +421,13 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
 
     if current_game == SollumzGame.RDR:
         tint_value = 0.95 if hasTint else 0.0
+        tint_value_2lyr = 1.0 if hasTint else 0.0
         for n in material.node_tree.nodes:
-            if n.name == "tint_mix_node":
+            if n.name  == "tint_mix_node":
                 n.inputs["Fac"].default_value = tint_value
-                break
+            if n.name in ("tint_multiply_node0", "tint_multiply_node1"):
+                n.inputs[1].default_value = tint_value_2lyr
+               
              
     return material
 

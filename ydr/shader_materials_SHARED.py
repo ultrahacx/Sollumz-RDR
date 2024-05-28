@@ -563,6 +563,7 @@ def link_value_shader_parameters(b: ShaderBuilder):
         if tint_mix_node0:
              
             tint0_multiply = node_tree.nodes.new("ShaderNodeMath")
+            tint0_multiply.name = "tint_multiply_node0"
             tint0_multiply.operation = "MULTIPLY"        
             tint0_multiply.inputs[1].default_value = 0.95
             links.new(lyr0tint.outputs["X"], tint0_multiply.inputs[0])
@@ -571,6 +572,7 @@ def link_value_shader_parameters(b: ShaderBuilder):
         tint_mix_node1 = try_get_node(node_tree, "tint_mix_node1")
         if tint_mix_node1:
             tint1_multiply = node_tree.nodes.new("ShaderNodeMath")
+            tint1_multiply.name = "tint_multiply_node1"
             tint1_multiply.operation = "MULTIPLY"        
             tint1_multiply.inputs[1].default_value = 0.95
             links.new(lyr1tint.outputs["X"], tint1_multiply.inputs[0])

@@ -24,6 +24,11 @@ def Generate(text, encoding="utf-8", seed=0):
     bts = text.lower().encode(encoding)
     return GenerateData(bts, seed)
 
+def GenerateCaseSensitive(text, encoding="utf-8", seed=0):
+    bts = text.encode(encoding)
+    return GenerateData(bts, seed)
+
+
 
 def name_to_hash(name: str) -> int:
     """Gets a hash from a string. If it starts with `hash_`, it parses the hexadecimal number afterwards;

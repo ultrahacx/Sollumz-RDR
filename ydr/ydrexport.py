@@ -1238,13 +1238,10 @@ def get_shaders_from_blender(materials):
                             delattr(param, "flags")
             elif isinstance(node, SzShaderNodeParameter):
                 param_def = shader_def.parameter_map.get(node.name)
-                ## no game check because this will be never a thing in GTA
-                if "0x" in node.name:
-                    node_name_parts = node.name.split('_')
-                    node_name_parts_suffix = node_name_parts[1].lower() if len(node_name_parts) > 1 else "unknown"
 
+                if current_game == SollumzGame.RDR:
                     for key, value in shader_def.parameter_map.items():
-                        if node_name_parts_suffix in key.lower():                       
+                        if jenkhash.GenerateCaseSensitive(node.name) == jenkhash.GenerateCaseSensitive(key):                       
                             param_def = value
                             break
                     
@@ -1299,18 +1296,7 @@ def get_shaders_from_blender(materials):
                         shader.parameters[parameter_index] = param
 
                 elif current_game == SollumzGame.RDR:
-                    param_name_parts = param.name.split('_')
-                    param_name_suffix = param_name_parts[1].lower() if len(param_name_parts) > 1 else "unknown"
-
-                    parameter_index = next(
-                        (
-                            i for i, x in enumerate(shader.parameters.items)
-                            if x.name == param.name or (
-                                "0x" in param.name and param_name_suffix in x.name.lower()
-                            )
-                        ), 
-                        None
-                    )
+                    parameter_index = next((i for i, x in enumerate(shader.parameters.items) if jenkhash.GenerateCaseSensitive(x.name) == jenkhash.GenerateCaseSensitive(param.name)), None)
 
                     if parameter_index is None:
                         shader.parameters.items.append(param)

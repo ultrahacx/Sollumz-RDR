@@ -21,6 +21,7 @@ from .lights import create_light_objs
 from .properties import DrawableModelProperties
 from .render_bucket import RenderBucket
 from .. import logger
+from ..tools import jenkhash
 
 
 current_game = SollumzGame.GTA
@@ -395,10 +396,7 @@ def shader_item_to_material(shader: Shader, shader_group: ShaderGroup, filepath:
                             n.extra_property.index = param.index       
 
                 if current_game == SollumzGame.RDR:
-                    node_name_parts = n.name.split('_')
-                    node_name_suffix = node_name_parts[1].lower() if len(node_name_parts) > 1 else "unknown"
-         
-                    if (param.name == n.name or ("0x" in n.name and node_name_suffix in param.name.lower())) and n.num_rows == 1:
+                   if jenkhash.GenerateCaseSensitive(param.name) == jenkhash.GenerateCaseSensitive(n.name) and n.num_rows == 1:
                         n.set("X", param.x)
                         if n.num_cols > 1:
                             n.set("Y", param.y)

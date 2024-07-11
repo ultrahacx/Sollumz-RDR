@@ -541,7 +541,6 @@ def get_bound_geom_mesh_data(
         for poly in triangles:
                 face = []
                 for v in [vertices[poly[2]], vertices[poly[3]], vertices[poly[4]]]:
-                    print(v)
                     v_tuple = tuple(v)
                     if v_tuple not in verts_dict:
                         verts_dict[v_tuple] = len(verts)

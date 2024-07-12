@@ -23,8 +23,9 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
     current_game = ydd_obj.sollum_game_type
     drawable.current_game = current_game
 
-    ydd_xml = DrawableDictionary()
-    if current_game == SollumzGame.RDR:
+    if current_game == SollumzGame.GTA:
+        ydd_xml = DrawableDictionary()
+    elif current_game == SollumzGame.RDR:
         ydd_xml = RDR2DrawableDictionary()
 
     ydd_armature = find_ydd_armature(
@@ -49,7 +50,11 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
         elif current_game == SollumzGame.RDR:
             ydd_xml.drawables.append(drawable_xml)
 
-    # ydd_xml.sort(key=get_hash)
+    if current_game == SollumzGame.GTA:
+        ydd_xml.sort(key=get_hash)
+    elif current_game == SollumzGame.RDR:
+        ydd_xml.drawables.sort(key=get_hash)
+   
 
     return ydd_xml
 

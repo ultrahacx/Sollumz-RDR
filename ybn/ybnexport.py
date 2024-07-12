@@ -13,7 +13,6 @@ from ..cwxml.bound import (
     BoundGeometryBVH,
     BoundChild,
     BoundBox,
-    BoundList,
     BoundSphere,
     BoundCapsule,
     BoundCylinder,
@@ -416,7 +415,8 @@ def create_export_mesh(obj: bpy.types.Object):
     """Get an evaluated mesh from ``obj`` with normals and loop triangles calculated.
     Original mesh is not affected."""
     mesh = obj.to_mesh()
-    mesh.calc_normals_split()
+    if bpy.app.version < (4, 1, 0):
+        mesh.calc_normals_split()
     mesh.calc_loop_triangles()
 
     return mesh
@@ -424,7 +424,8 @@ def create_export_mesh(obj: bpy.types.Object):
 
 def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert_index: Callable[[Vector], int], get_mat_index: Callable[[bpy.types.Material], int]):
     """Create all bound polygon triangle XML objects for this BoundGeometry/BVH."""
-    triangles = []
+    triangles: list[PolyTriangle] = []
+
     if current_game == SollumzGame.GTA:
         color_attr = mesh.color_attributes[0] if len(mesh.color_attributes) > 0 else None
         if color_attr is not None and (color_attr.domain != "CORNER" or color_attr.data_type != "BYTE_COLOR"):
@@ -453,6 +454,7 @@ def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert
             triangle.v3 = tri_indices[2]
 
             triangles.append(triangle)
+
     elif current_game == SollumzGame.RDR:
         for tri in mesh.loop_triangles:
             mat = mesh.materials[tri.material_index]
@@ -466,7 +468,7 @@ def create_poly_xml_triangles(mesh: bpy.types.Mesh, transforms: Matrix, get_vert
 
             tri_poly_string = f"Tri {get_mat_index(mat)} {tri_indices[0]} {tri_indices[1]} {tri_indices[2]}"
             triangles.append(tri_poly_string)
-
+   
     return triangles
 
 
@@ -696,9 +698,8 @@ def get_bvh_extents(obj: bpy.types.Object, composite_transform: Matrix):
 def get_composite_extents(composite_xml: BoundComposite):
     """Get composite extents based on child bound extents"""
     corner_vecs: list[Vector] = []
-    children = composite_xml.children
-        
-    for child in children:
+
+    for child in composite_xml.children:
         transform = child.composite_transform.transposed()
         child_corners = get_corners_from_extents(child.box_min, child.box_max)
         # Get AABB with transforms applied

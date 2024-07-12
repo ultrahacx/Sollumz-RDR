@@ -81,7 +81,9 @@ class MeshBuilder:
                               for n in self.vertex_arr["Normal"]]
         mesh.normals_split_custom_set_from_vertices(normals_normalized)
 
-        mesh.use_auto_smooth = True
+        if bpy.app.version < (4, 1, 0):
+            # needed to use custom split normals pre-4.1
+            mesh.use_auto_smooth = True
 
     def set_mesh_uvs(self, mesh: bpy.types.Mesh):
         uv_attrs = [

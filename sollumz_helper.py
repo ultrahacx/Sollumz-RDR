@@ -109,6 +109,9 @@ def duplicate_object_with_children(obj):
             new_objs[i].parent = new_objs[objs.index(objs[i].parent)]
     for new_obj in new_objs:
         bpy.context.scene.collection.objects.link(new_obj)
+        for constraint in new_obj.constraints:
+            if hasattr(constraint, "target") and constraint.target in objs:
+                constraint.target = new_objs[objs.index(constraint.target)]
     return new_objs[0]
 
 
@@ -138,11 +141,14 @@ def get_sollumz_materials(obj: bpy.types.Object):
         if child.sollum_type != SollumType.DRAWABLE_MODEL:
             continue
 
-        for lod in child.sollumz_lods.lods:
-            if lod.mesh is None:
+        lods = child.sz_lods
+        for lod_level in LODLevel:
+            lod = lods.get_lod(lod_level)
+            lod_mesh = lod.mesh
+            if lod_mesh is None:
                 continue
 
-            mats = lod.mesh.materials
+            mats = lod_mesh.materials
 
             for mat in mats:
                 if mat.sollum_type != MaterialType.SHADER:

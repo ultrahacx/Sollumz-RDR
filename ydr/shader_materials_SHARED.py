@@ -262,19 +262,19 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
     cptn.domain = "CORNER"
     cptn.data_type = "FLOAT_COLOR"
-    gnt.links.new(input.outputs[0], cptn.inputs[0])
-    gnt.links.new(cptn.outputs[0], output.inputs[0])
+    gnt.links.new(input.outputs["Geometry"], cptn.inputs["Geometry"])
+    gnt.links.new(cptn.outputs["Geometry"], output.inputs["Geometry"])
 
     # create and link texture node
     txtn = gnt.nodes.new("GeometryNodeImageTexture")
     txtn.interpolation = "Closest"
-    gnt.links.new(input.outputs[4], txtn.inputs[0])
-    gnt.links.new(cptn.outputs[3], txtn.inputs[1])
-    gnt.links.new(txtn.outputs[0], output.inputs[1])
+    gnt.links.new(input.outputs["Palette Texture"], txtn.inputs["Image"])
+    gnt.links.new(cptn.outputs["Attribute"], txtn.inputs["Vector"])
+    gnt.links.new(txtn.outputs["Color"], output.inputs["Tint Color"])
 
     # separate colour0
     sepn = gnt.nodes.new("ShaderNodeSeparateXYZ")
-    gnt.links.new(input.outputs[1], sepn.inputs[0])
+    gnt.links.new(input.outputs["Color Attribute"], sepn.inputs["Vector"])
 
     # create math nodes
     mathns = []
@@ -334,16 +334,16 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     pal_flip_uv_mult.operation = "MULTIPLY"
     pal_flip_uv_mult.inputs[1].default_value = -1.0
 
-    gnt.links.new(input.outputs[4], pal_img_info.inputs[0])
-    gnt.links.new(input.outputs[3], pal_add.inputs[1])
+    gnt.links.new(input.outputs["Palette Texture"], pal_img_info.inputs["Image"])
+    gnt.links.new(input.outputs["Palette H (Preview)"], pal_add.inputs[1])
     gnt.links.new(pal_add.outputs[0], pal_div.inputs[0])
-    gnt.links.new(pal_img_info.outputs[1], pal_div.inputs[1])
+    gnt.links.new(pal_img_info.outputs["Height"], pal_div.inputs[1])
     gnt.links.new(pal_div.outputs[0], pal_flip_uv_sub.inputs[0])
     gnt.links.new(pal_flip_uv_sub.outputs[0], pal_flip_uv_mult.inputs[0])
 
     preview = gnt.nodes.new("ShaderNodeMath")
     preview.operation = "DIVIDE"
-    gnt.links.new(input.outputs[2], preview.inputs[0])
+    gnt.links.new(input.outputs["Palette W (Preview)"], preview.inputs[0])
     preview.inputs[1].default_value = 256
 
     compare = gnt.nodes.new("FunctionNodeCompare")
@@ -360,7 +360,7 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     comb = gnt.nodes.new("ShaderNodeCombineRGB")
     gnt.links.new(switch.outputs[0], comb.inputs[0])
     gnt.links.new(pal_flip_uv_mult.outputs[0], comb.inputs[1])
-    gnt.links.new(comb.outputs[0], cptn.inputs[3])
+    gnt.links.new(comb.outputs[0], cptn.inputs["Value"])
 
     return gnt
 
@@ -437,6 +437,8 @@ def create_parameter_node(
         elif param.type == ShaderParameterType.SAMPLER:
             node.extra_property.index = param.index
 
+    return node
+
 
 def link_diffuse(b: ShaderBuilder, imgnode):
     node_tree = b.node_tree
@@ -507,6 +509,8 @@ def link_value_shader_parameters(b: ShaderBuilder):
     spec_im = None
     spec_fm = None
     em_m = None
+    lyr0tint = None
+    lyr1tint = None
 
     for param in shader.parameters:
         if param.name == "bumpiness":
@@ -517,6 +521,12 @@ def link_value_shader_parameters(b: ShaderBuilder):
             spec_fm = node_tree.nodes["specularFalloffMult"]
         elif param.name == "emissiveMultiplier":
             em_m = node_tree.nodes["emissiveMultiplier"]
+        elif param.name == "lyr0tint":
+            lyr0tint = node_tree.nodes["lyr0tint"]
+        elif param.name == "lyr1tint":
+            lyr1tint = node_tree.nodes["lyr1tint"]
+
+
 
     if bmp:
         nm = try_get_node_by_cls(node_tree, bpy.types.ShaderNodeNormalMap)
@@ -548,6 +558,27 @@ def link_value_shader_parameters(b: ShaderBuilder):
         if em:
             links.new(em_m.outputs["X"], em.inputs[1])
 
+    if lyr0tint:
+        tint_mix_node0 = try_get_node(node_tree, "tint_mix_node0")
+        if tint_mix_node0:
+             
+            tint0_multiply = node_tree.nodes.new("ShaderNodeMath")
+            tint0_multiply.name = "tint_multiply_node0"
+            tint0_multiply.operation = "MULTIPLY"        
+            tint0_multiply.inputs[1].default_value = 0.95
+            links.new(lyr0tint.outputs["X"], tint0_multiply.inputs[0])
+            links.new(tint0_multiply.outputs[0], tint_mix_node0.inputs["Fac"])
+    if lyr1tint:
+        tint_mix_node1 = try_get_node(node_tree, "tint_mix_node1")
+        if tint_mix_node1:
+            tint1_multiply = node_tree.nodes.new("ShaderNodeMath")
+            tint1_multiply.name = "tint_multiply_node1"
+            tint1_multiply.operation = "MULTIPLY"        
+            tint1_multiply.inputs[1].default_value = 0.95
+            links.new(lyr1tint.outputs["X"], tint1_multiply.inputs[0])
+            links.new(tint1_multiply.outputs[0], tint_mix_node1.inputs["Fac"])
+
+
 
 def create_uv_map_nodes(b: ShaderBuilder):
     """Creates a ``ShaderNodeUVMap`` node for each UV map used in the shader."""
@@ -577,7 +608,7 @@ def link_uv_map_nodes_to_textures(b: ShaderBuilder):
             # texture already linked when creating the node tree, skip it
             continue
 
-        if tex_name in ("diffusetexture_layer0", "diffusetexture_layer1", "diffusetexture_layer2", "diffusetexture_layer3"):
+        if tex_name in ("diffusetexture_layer0", "diffusetexture_layer1", "diffusetexture_layer2", "diffusetexture_layer3", "bumptexture_layer0", "bumptexture_layer1", "bumptexture_layer2", "bumptexture_layer3"):
             vector_math = node_tree.nodes.new("ShaderNodeVectorMath")
             vector_math.operation = 'MULTIPLY'
             vector_math.name = 'Multiply'

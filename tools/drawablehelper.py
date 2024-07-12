@@ -231,6 +231,7 @@ def convert_obj_to_drawable(obj: bpy.types.Object, sollum_game_type: SollumzGame
 
 def convert_objs_to_single_drawable(objs: list[bpy.types.Object], sollum_game_type: SollumzGame):
     drawable_obj = create_empty_object(SollumType.DRAWABLE)
+    drawable_obj.sollum_game_type = sollum_game_type
 
     for obj in objs:
         convert_obj_to_model(obj, sollum_game_type)
@@ -243,9 +244,8 @@ def convert_objs_to_single_drawable(objs: list[bpy.types.Object], sollum_game_ty
 def convert_obj_to_model(obj: bpy.types.Object, sollum_game_type: SollumzGame):
     obj.sollum_type = SollumType.DRAWABLE_MODEL
     obj.sollum_game_type = sollum_game_type
-    obj.sollumz_lods.add_empty_lods()
-    obj.sollumz_lods.set_lod_mesh(LODLevel.HIGH, obj.data)
-    obj.sollumz_lods.set_active_lod(LODLevel.HIGH)
+    obj.sz_lods.get_lod(LODLevel.HIGH).mesh = obj.data
+    obj.sz_lods.active_lod_level = LODLevel.HIGH
 
 
 def center_drawable_to_models(drawable_obj: bpy.types.Object):

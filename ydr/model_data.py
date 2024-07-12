@@ -30,8 +30,8 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
     global current_game
     current_game = drawable_xml.game
     model_datas: list[ModelData] = []
-    model_xmls, bone_inds = get_lod_model_xmls(drawable_xml)
-    for model_lods, bone_ind in zip(model_xmls, bone_inds):
+    model_xmls = get_lod_model_xmls(drawable_xml)
+    for (bone_index, _), model_lods in model_xmls.items():
         if current_game == SollumzGame.RDR:
             mapping = {lod_level: model_xml.bone_mapping for lod_level, model_xml in model_lods.items()}
         else:
@@ -43,7 +43,7 @@ def get_model_data(drawable_xml: Drawable) -> list[ModelData]:
             xml_lods={
                 lod_level: model_xml for lod_level, model_xml in model_lods.items()
             },
-            bone_index=bone_ind,
+            bone_index=bone_index,
             bone_mapping=mapping
         )
 
@@ -215,25 +215,51 @@ def get_faces_subset(vert_arr: NDArray, ind_arr: NDArray[np.uint32], face_inds: 
     return new_vert_arr, new_ind_arr
 
 
-def get_lod_model_xmls(drawable_xml: Drawable) -> Tuple[list[dict[LODLevel, DrawableModel]], list[int]]:
-    """Gets mapping of LOD levels for each DrawableModel. Also returns a list of bone indices for each model."""
-    model_xmls: dict[int, dict[LODLevel, DrawableModel]] = defaultdict(dict)
-    bone_inds: list[int] = []
+def get_lod_model_xmls(drawable_xml: Drawable) -> dict[(int, int), dict[LODLevel, DrawableModel]]:
+    """Gets mapping of LOD levels for each DrawableModel, keyed by a (bone index, model per-bone ID) tuple."""
+    #
+    # NOTE: we assumme that models attached to the same bone appear in the same order at different LODs. This doesn't
+    #       quite work when not all models have the same number of LOD levels.
+    #
+    # For example:
+    #   A model could have the following hierarchy in Blender:
+    #     Drawable
+    #       Dr. Model #0 -> LODs High = A, Med = D
+    #       Dr. Model #1 -> LODs High = B, Med = -
+    #       Dr. Model #2 -> LODs High = C, Med = E
+    #   When exported the XML will have something like this:
+    #     DrawableModelsHigh = [A, B, C]
+    #     DrawableModelsMedium = [D, E]
+    #   If we import back that XML, we have to decide how to connect the models in the different LOD arrays. There is
+    #   nothing in the XML that connects different LOD models to form a full "model", the game doesn't need it, the game
+    #   just switches between which LOD array to render.
+    #
+    #   With our approach, the imported drawable will look like this in Blender. Notice that now model #1 has the medium
+    #   LOD of model #2.
+    #     Drawable
+    #       Dr. Model #0 -> LODs High = A, Med = D
+    #       Dr. Model #1 -> LODs High = B, Med = E
+    #       Dr. Model #2 -> LODs High = C, Med = -
+    #
+    #   This shouldn't be much of an issue as it doesn't affect how it looks in-game when exported again. Just may
+    #   confuse the user a bit at first.
+    #   This would only be an issue if the LODs where attached to different bones but ended placed in the same drawable
+    #   model when imported, but we handle this case.
+    #
+    model_xmls_map: dict[(int, int), dict[LODLevel, DrawableModel]] = defaultdict(dict)
 
     for lod_level, models in get_model_xmls_by_lod(drawable_xml).items():
         if current_game == SollumzGame.RDR and isinstance(models, LodList):
             models = models.models
-        if models is None:
-            print("Skipping LOD level since lod model returned None")
-            continue
-        for i, model_xml in enumerate(models):
-            if i not in model_xmls:
-                # Each corresponding DrawableModel will always have the same bone index across all LODs (verified with CodeWalker)
-                bone_inds.append(model_xml.bone_index)
+        model_count_per_bone = defaultdict(int)
+        for model_xml in models:
+            bone_index = model_xml.bone_index
+            # We use `model_per_bone_id` to differentiate multiple models attached to the same bone
+            model_per_bone_id = model_count_per_bone[bone_index]
+            model_count_per_bone[bone_index] += 1
+            model_xmls_map[(bone_index, model_per_bone_id)][lod_level] = model_xml
 
-            model_xmls[i][lod_level] = model_xml
-
-    return list(model_xmls.values()), bone_inds
+    return model_xmls_map
 
 
 def mesh_data_from_xml(model_xml: DrawableModel) -> MeshData:
@@ -337,10 +363,9 @@ def get_model_poly_mat_inds(geoms: list[Geometry]):
     for geom in geoms:
         if current_game == SollumzGame.GTA:
             num_tris = round(len(geom.index_buffer.data) / 3)
-            mat_inds = np.full((num_tris,), geom.shader_index)
         elif current_game == SollumzGame.RDR:
             num_tris = round(len(geom.indices) / 3)
-            mat_inds = np.full((num_tris,), geom.shader_index)
+        mat_inds = np.full((num_tris,), geom.shader_index)
 
         mat_ind_arrs.append(mat_inds)
 

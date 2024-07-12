@@ -90,9 +90,9 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     drawable_xml = Drawable(tag_name)
     drawable_xml.matrix = None
 
-    if SollumzGame.GTA:
+    if current_game == SollumzGame.GTA:
         drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
-    elif SollumzGame.RDR:
+    elif current_game == SollumzGame.RDR:
         obj_parent = find_sollumz_parent(drawable_obj, SollumType.DRAWABLE_DICTIONARY)
         if obj_parent is not None:
             drawable_xml.name = remove_number_suffix(obj_parent.name.lower())
@@ -155,22 +155,27 @@ def create_model_xmls(drawable_xml: Drawable, drawable_obj: bpy.types.Object, ma
     for model_obj in model_objs:
         transforms_to_apply = get_export_transforms_to_apply(model_obj)
 
-        for lod in model_obj.sollumz_lods.lods:
-            if lod.mesh is None or lod.level == LODLevel.VERYHIGH:
+        lods = model_obj.sz_lods
+        for lod_level in LODLevel:
+            if lod_level == LODLevel.VERYHIGH:
                 continue
 
-            model_xml = create_model_xml(
-                model_obj, lod.level, materials, bones, transforms_to_apply)
+            lod = lods.get_lod(lod_level)
+            if lod.mesh is None:
+                continue
 
+            model_xml = create_model_xml(model_obj, lod_level, materials, bones, transforms_to_apply)
             if not model_xml.geometries:
                 continue
 
-            append_model_xml(drawable_xml, model_xml, lod.level)
+            append_model_xml(drawable_xml, model_xml, lod_level)
 
     # Drawables only ever have 1 skinned drawable model per LOD level. Since, the skinned portion of the
     # drawable can be split by vertex group, we have to join each separate part into a single object.
-    # join_skinned_models_for_each_lod(drawable_xml)
-    # split_drawable_by_vert_count(drawable_xml)
+    # TODO RDR
+    if current_game == SollumzGame.GTA:
+        join_skinned_models_for_each_lod(drawable_xml)
+        split_drawable_by_vert_count(drawable_xml)
 
 
 def get_model_objs(drawable_obj: bpy.types.Object) -> list[bpy.types.Object]:
@@ -742,19 +747,6 @@ def create_shader_group_xml(materials: list[bpy.types.Material], drawable_xml: D
             drawable_xml.shader_group.texture_dictionary.textures = texture_dictionary
         else:
             delattr(drawable_xml.shader_group, "texture_dictionary")
-    if current_game == SollumzGame.GTA:
-        drawable_xml.shader_group.unknown_30 = calc_shadergroup_unk30(len(shaders))
-
-
-def calc_shadergroup_unk30(num_shaders: int):
-    # Its still unknown what unk30 actually is. But for 98% of files it can be
-    # calculated like this. It follows this pattern:
-    # (ShaderCount: 1, Unk30: 8), (ShaderCount: 2, Unk30: 11), (ShaderCount: 3, Unk30: 15),
-    # (ShaderCount: 4, Unk30: 18)... Unk30 increases by 3 for odd shader counts and 4 for even shader counts
-    if num_shaders % 2 == 0:
-        return int((0.5 * num_shaders) * 7 + 4)
-
-    return int((0.5 * (num_shaders + 1)) * 7 + 1)
 
 
 def texture_dictionary_from_materials(materials: list[bpy.types.Material]):
@@ -1246,6 +1238,13 @@ def get_shaders_from_blender(materials):
                             delattr(param, "flags")
             elif isinstance(node, SzShaderNodeParameter):
                 param_def = shader_def.parameter_map.get(node.name)
+
+                if current_game == SollumzGame.RDR:
+                    for key, value in shader_def.parameter_map.items():
+                        if jenkhash.GenerateCaseSensitive(node.name) == jenkhash.GenerateCaseSensitive(key):                       
+                            param_def = value
+                            break
+                    
                 is_vector = isinstance(param_def, ShaderParameterFloatVectorDef) and not param_def.is_array
                 if is_vector:
                     param = VectorShaderParameter()
@@ -1297,7 +1296,8 @@ def get_shaders_from_blender(materials):
                         shader.parameters[parameter_index] = param
 
                 elif current_game == SollumzGame.RDR:
-                    parameter_index = next((i for i, x in enumerate(shader.parameters.items) if x.name == param.name), None)
+                    parameter_index = next((i for i, x in enumerate(shader.parameters.items) if jenkhash.GenerateCaseSensitive(x.name) == jenkhash.GenerateCaseSensitive(param.name)), None)
+
                     if parameter_index is None:
                         shader.parameters.items.append(param)
                     else:

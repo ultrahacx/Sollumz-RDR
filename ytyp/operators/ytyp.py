@@ -167,17 +167,16 @@ class SOLLUMZ_OT_create_archetype_from_selected(SOLLUMZ_OT_base, bpy.types.Opera
         selected_objs = context.selected_objects
         found = False
         for obj in selected_objs:
-            selected_ytyp = get_selected_ytyp(context)
             archetype_type = context.scene.create_archetype_type
             if not obj.sollum_type in self.allowed_types:
                 continue
-            if archetype_type == ArchetypeType.MLO and obj.sollum_type != SollumType.BOUND_COMPOSITE:
-                found = True
-                self.warning(
+            if archetype_type == ArchetypeType.MLO:
+                if obj.sollum_type != SollumType.BOUND_COMPOSITE:
+                    self.message(
                         f"MLO asset '{obj.name}' must be a {SOLLUMZ_UI_NAMES[SollumType.BOUND_COMPOSITE]}!")
-                continue
-
+                    continue
             found = True
+            selected_ytyp = get_selected_ytyp(context)
             item = selected_ytyp.new_archetype()
 
             item.name = obj.name
@@ -303,6 +302,9 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
         options={"HIDDEN"},
         maxlen=255,
     )
+
+    def draw(self, context):
+        pass
 
     def run(self, context):
         try:

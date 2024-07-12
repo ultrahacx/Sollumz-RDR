@@ -164,10 +164,9 @@ def create_bound_capsule(bound_xml: BoundChild):
     if current_game == SollumzGame.GTA:
         bbmin, bbmax = bound_xml.box_min, bound_xml.box_max
         obj.bound_length = bbmax.z - bbmin.z
-        obj.bound_radius = bound_xml.sphere_radius
     elif current_game == SollumzGame.RDR:
         obj.margin = bound_xml.margin
-        obj.bound_radius = bound_xml.sphere_radius
+    obj.bound_radius = bound_xml.sphere_radius
 
     return obj
 
@@ -321,135 +320,155 @@ def init_poly_obj(poly, sollum_type, materials):
     return obj
 
 
-def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
-    if type(poly) == PolyBox or (isinstance(poly, list) and poly[0] == "Box"):
-        obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
-        
-        if current_game == SollumzGame.GTA:
-            v1 = vertices[poly.v1]
-            v2 = vertices[poly.v2]
-            v3 = vertices[poly.v3]
-            v4 = vertices[poly.v4]
-        elif current_game == SollumzGame.RDR:
-            v1 = vertices[poly[2]]
-            v2 = vertices[poly[3]]
-            v3 = vertices[poly[4]]
-            v4 = vertices[poly[5]]
-        center = (v1 + v2 + v3 + v4) * 0.25
+def create_poly_box(poly, materials, vertices):
+    obj = init_poly_obj(poly, SollumType.BOUND_POLY_BOX, materials)
 
-        # Get edges from the 4 opposing corners of the box
-        a1 = ((v3 + v4) - (v1 + v2)) * 0.5
-        v2 = v1 + a1
-        v3 = v3 - a1
-        v4 = v4 - a1
+    if current_game == SollumzGame.GTA:
+        v1 = vertices[poly.v1]
+        v2 = vertices[poly.v2]
+        v3 = vertices[poly.v3]
+        v4 = vertices[poly.v4]
+    elif current_game == SollumzGame.RDR:
+        v1 = vertices[poly[2]]
+        v2 = vertices[poly[3]]
+        v3 = vertices[poly[4]]
+        v4 = vertices[poly[5]]
+    center = (v1 + v2 + v3 + v4) * 0.25
 
-        minedge = Vector((0.0001, 0.0001, 0.0001))
-        edge1 = max(v2 - v1, minedge)
-        edge2 = max(v3 - v1, minedge)
-        edge3 = max((v4 - v1), minedge)
+    # Get edges from the 4 opposing corners of the box
+    a1 = ((v3 + v4) - (v1 + v2)) * 0.5
+    v2 = v1 + a1
+    v3 = v3 - a1
+    v4 = v4 - a1
 
-        # Order edges
-        s1 = False
-        s2 = False
-        s3 = False
-        if edge2.length > edge1.length:
-            t1 = edge1
-            edge1 = edge2
-            edge2 = t1
-            s1 = True
-        if edge3.length > edge1.length:
-            t1 = edge1
-            edge1 = edge3
-            edge3 = t1
-            s2 = True
-        if edge3.length > edge2.length:
-            t1 = edge2
-            edge2 = edge3
-            edge3 = t1
-            s3 = True
+    minedge = Vector((0.0001, 0.0001, 0.0001))
+    edge1 = max(v2 - v1, minedge)
+    edge2 = max(v3 - v1, minedge)
+    edge3 = max((v4 - v1), minedge)
 
-        # Ensure all edge vectors are perpendicular to each other
-        b1 = edge1.normalized()
-        b2 = edge2.normalized()
-        b3 = b1.cross(b2).normalized()
-        b2 = b1.cross(b3).normalized()
-        edge2 = b2 * edge2.dot(b2)
-        edge3 = b3 * edge3.dot(b3)
+    # Order edges
+    s1 = False
+    s2 = False
+    s3 = False
+    if edge2.length > edge1.length:
+        t1 = edge1
+        edge1 = edge2
+        edge2 = t1
+        s1 = True
+    if edge3.length > edge1.length:
+        t1 = edge1
+        edge1 = edge3
+        edge3 = t1
+        s2 = True
+    if edge3.length > edge2.length:
+        t1 = edge2
+        edge2 = edge3
+        edge3 = t1
+        s3 = True
 
-        # Unswap edges
-        if s3 == True:
-            t1 = edge2
-            edge2 = edge3
-            edge3 = t1
-        if s2 == True:
-            t1 = edge1
-            edge1 = edge3
-            edge3 = t1
-        if s1 == True:
-            t1 = edge1
-            edge1 = edge2
-            edge2 = t1
+    # Ensure all edge vectors are perpendicular to each other
+    b1 = edge1.normalized()
+    b2 = edge2.normalized()
+    b3 = b1.cross(b2).normalized()
+    b2 = b1.cross(b3).normalized()
+    edge2 = b2 * edge2.dot(b2)
+    edge3 = b3 * edge3.dot(b3)
 
-        mat = Matrix()
-        mat[0] = edge1.x, edge2.x, edge3.x, center.x
-        mat[1] = edge1.y, edge2.y, edge3.y, center.y
-        mat[2] = edge1.z, edge2.z, edge3.z, center.z
+    # Unswap edges
+    if s3 == True:
+        t1 = edge2
+        edge2 = edge3
+        edge3 = t1
+    if s2 == True:
+        t1 = edge1
+        edge1 = edge3
+        edge3 = t1
+    if s1 == True:
+        t1 = edge1
+        edge1 = edge2
+        edge2 = t1
 
-        create_box(obj.data, size=1)
-        obj.matrix_basis = mat
+    mat = Matrix()
+    mat[0] = edge1.x, edge2.x, edge3.x, center.x
+    mat[1] = edge1.y, edge2.y, edge3.y, center.y
+    mat[2] = edge1.z, edge2.z, edge3.z, center.z
 
-        return obj
-    elif type(poly) == PolySphere or (isinstance(poly, list) and poly[0] == "Sph"):
-        sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
-        if current_game == SollumzGame.GTA:
-            sphere.bound_radius = poly.radius
-            sphere.location = vertices[poly.v]
-        elif current_game == SollumzGame.RDR:
-            sphere.bound_radius = poly[3]
-            sphere.location = vertices[poly[2]]
+    create_box(obj.data, size=1)
+    obj.matrix_basis = mat
 
-        return sphere
-    elif type(poly) == PolyCapsule or (isinstance(poly, list) and poly[0] == "Cap"):
-        capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
-        if current_game == SollumzGame.GTA:
-            v1 = vertices[poly.v1]
-            v2 = vertices[poly.v2]
-            rot = get_direction_of_vectors(v1, v2)
-            capsule.bound_radius = poly.radius * 2
-            capsule.bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
-        elif current_game == SollumzGame.RDR:
-            v1 = vertices[poly[2]]
-            v2 = vertices[poly[3]]
-            rot = get_direction_of_vectors(v1, v2)
-            capsule.bound_radius = poly[4] * 2
-            capsule.bound_length = ((v1 - v2).length + (poly[4] * 2)) / 2
+    return obj
 
-        capsule.location = (v1 + v2) / 2
-        capsule.rotation_euler = rot
+def create_poly_sphere(poly, materials, vertices):
+    sphere = init_poly_obj(poly, SollumType.BOUND_POLY_SPHERE, materials)
+    if current_game == SollumzGame.GTA:
+        sphere.bound_radius = poly.radius
+        sphere.location = vertices[poly.v]
+    elif current_game == SollumzGame.RDR:
+        sphere.bound_radius = poly[3]
+        sphere.location = vertices[poly[2]]
+    return sphere
 
-        return capsule
-    elif type(poly) == PolyCylinder or (isinstance(poly, list) and poly[0] == "Cyl"):
-        cylinder = init_poly_obj(
-            poly, SollumType.BOUND_POLY_CYLINDER, materials)
-        if current_game == SollumzGame.GTA:
-            v1 = vertices[poly.v1]
-            v2 = vertices[poly.v2]
-            radius = poly.radius
-        elif current_game == SollumzGame.RDR:
-            v1 = vertices[poly[2]]
-            v2 = vertices[poly[3]]
-            radius = poly[4]
-
+def create_poly_capsule(poly, materials, vertices):
+    capsule = init_poly_obj(poly, SollumType.BOUND_POLY_CAPSULE, materials)
+    if current_game == SollumzGame.GTA:
+        v1 = vertices[poly.v1]
+        v2 = vertices[poly.v2]
         rot = get_direction_of_vectors(v1, v2)
+        capsule.bound_radius = poly.radius * 2
+        capsule.bound_length = ((v1 - v2).length + (poly.radius * 2)) / 2
+    elif current_game == SollumzGame.RDR:
+        v1 = vertices[poly[2]]
+        v2 = vertices[poly[3]]
+        rot = get_direction_of_vectors(v1, v2)
+        capsule.bound_radius = poly[4] * 2
+        capsule.bound_length = ((v1 - v2).length + (poly[4] * 2)) / 2
 
-        cylinder.bound_radius = radius
-        cylinder.bound_length = get_distance_of_vectors(v1, v2)
-        cylinder.matrix_world = Matrix()
+    capsule.location = (v1 + v2) / 2
+    capsule.rotation_euler = rot
 
-        cylinder.location = (v1 + v2) / 2
-        cylinder.rotation_euler = rot
+    return capsule
 
-        return cylinder
+def create_poly_cylinder(poly, materials, vertices):
+    cylinder = init_poly_obj(poly, SollumType.BOUND_POLY_CYLINDER, materials)
+    if current_game == SollumzGame.GTA:
+        v1 = vertices[poly.v1]
+        v2 = vertices[poly.v2]
+        radius = poly.radius
+    elif current_game == SollumzGame.RDR:
+        v1 = vertices[poly[2]]
+        v2 = vertices[poly[3]]
+        radius = poly[4]
+
+    rot = get_direction_of_vectors(v1, v2)
+
+    cylinder.bound_radius = radius
+    cylinder.bound_length = get_distance_of_vectors(v1, v2)
+    cylinder.matrix_world = Matrix()
+
+    cylinder.location = (v1 + v2) / 2
+    cylinder.rotation_euler = rot
+
+    return cylinder
+
+POLY_TO_OBJ_MAP = {
+    PolyBox: create_poly_box,
+    PolySphere: create_poly_sphere,
+    PolyCapsule: create_poly_capsule,
+    PolyCylinder: create_poly_cylinder,
+}
+
+RDR_POLY_TO_OBJ_MAP = {
+    "Box": create_poly_box,
+    "Sph": create_poly_sphere,
+    "Cap": create_poly_capsule,
+    "Cyl": create_poly_cylinder,
+}
+
+def poly_to_obj(poly, materials, vertices) -> bpy.types.Object:
+    if current_game == SollumzGame.GTA:
+        return POLY_TO_OBJ_MAP[type(poly)](poly, materials, vertices)
+    elif current_game == SollumzGame.RDR:
+        return RDR_POLY_TO_OBJ_MAP[poly[0]](poly, materials, vertices)
 
 
 def get_poly_triangles(polys: list[Polygon]):
@@ -501,40 +520,36 @@ def get_bound_geom_mesh_data(
         return (color_int[0] / 255, color_int[1] / 255, color_int[2] / 255, color_int[3] / 255)
 
     verts = []
+    verts_dict = {}
     faces = []
     colors = [] if vertex_colors else None
 
-    for poly in triangles:
-        face = []
-        if current_game == SollumzGame.GTA:
-            v1 = vertices[poly.v1]
-            v2 = vertices[poly.v2]
-            v3 = vertices[poly.v3]
-        elif current_game == SollumzGame.RDR:
-            v1 = vertices[poly[2]]
-            v2 = vertices[poly[3]]
-            v3 = vertices[poly[4]]
-        if v1 not in verts:
-            verts.append(v1)
-            face.append(len(verts) - 1)
-        else:
-            face.append(verts.index(v1))
-        if v2 not in verts:
-            verts.append(v2)
-            face.append(len(verts) - 1)
-        else:
-            face.append(verts.index(v2))
-        if v3 not in verts:
-            verts.append(v3)
-            face.append(len(verts) - 1)
-        else:
-            face.append(verts.index(v3))
-        faces.append(face)
+    if current_game == SollumzGame.GTA:
+        for poly in triangles:
+            face = []
+            for v in [vertices[poly.v1], vertices[poly.v2], vertices[poly.v3]]:
+                v_tuple = tuple(v)
+                if v_tuple not in verts_dict:
+                    verts_dict[v_tuple] = len(verts)
+                    verts.append(v)
+                face.append(verts_dict[v_tuple])
+            faces.append(face)
 
-        if colors is not None:
-            colors.append(_color_to_float(vertex_colors[poly.v1]))
-            colors.append(_color_to_float(vertex_colors[poly.v2]))
-            colors.append(_color_to_float(vertex_colors[poly.v3]))
+            if colors is not None:
+                colors.extend(_color_to_float(vertex_colors[v]) for v in [poly.v1, poly.v2, poly.v3])
+    elif current_game == SollumzGame.RDR:
+        for poly in triangles:
+                face = []
+                for v in [vertices[poly[2]], vertices[poly[3]], vertices[poly[4]]]:
+                    v_tuple = tuple(v)
+                    if v_tuple not in verts_dict:
+                        verts_dict[v_tuple] = len(verts)
+                        verts.append(v)
+                    face.append(verts_dict[v_tuple])
+                faces.append(face)
+
+                if colors is not None:
+                    colors.extend(_color_to_float(vertex_colors[v]) for v in [poly[2], poly[3], poly[4]])
 
     return verts, faces, np.array(colors, dtype=np.float64) if colors is not None else None
 

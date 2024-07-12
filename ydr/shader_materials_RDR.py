@@ -309,36 +309,62 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     links.new(controltexturetex.outputs["Color"], control_mix.inputs["Color1"])
     links.new(separate_rgb.outputs["Red"], control_mix.inputs["Color2"])
 
-    # Mix diffuses by vertex color
-    diff_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    links.new(lyr0diffusetex.outputs["Color"], diff_lyr_mix.inputs["Color1"])
-    links.new(lyr1diffusetex.outputs["Color"], diff_lyr_mix.inputs["Color2"])
-    links.new(control_mix.outputs["Color"], diff_lyr_mix.inputs["Fac"])
+    something_mix = node_tree.nodes.new("ShaderNodeMixRGB")
+    something_mix.blend_type = "BURN"
+    links.new(control_mix.outputs["Color"], something_mix.inputs["Color1"])
+    something_mix.inputs["Fac"].default_value = 0.25
+
+    contrast = node_tree.nodes.new("ShaderNodeBrightContrast")
+    links.new(something_mix.outputs["Color"], contrast.inputs["Color"])
+    contrast.inputs[1].default_value = 1
+    contrast.inputs[2].default_value = 2
 
     # Mix _mb by vertex color
     matb_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    links.new(lyr0materialbtex.outputs["Color"], matb_lyr_mix.inputs["Color1"])
-    links.new(lyr1materialbtex.outputs["Color"], matb_lyr_mix.inputs["Color2"])
-    links.new(control_mix.outputs["Color"], matb_lyr_mix.inputs["Fac"])
+    links.new(lyr0materialbtex.outputs["Alpha"], matb_lyr_mix.inputs["Color1"])
+    links.new(lyr1materialbtex.outputs["Alpha"], matb_lyr_mix.inputs["Color2"])
+    links.new(separate_rgb.outputs["Red"], matb_lyr_mix.inputs["Fac"])
 
-    materialb_rgb = node_tree.nodes.new(type='ShaderNodeSeparateColor')
-    links.new(matb_lyr_mix.outputs["Color"], materialb_rgb.inputs["Color"])
+    links.new(matb_lyr_mix.outputs["Color"], something_mix.inputs["Color2"])
 
 
     # Apply tint before dirt diffuse
     attr = node_tree.nodes.new("ShaderNodeAttribute")
     attr.attribute_name = "TintColor"
-    tint_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    tint_mix.name = "tint_mix_node"
-    tint_mix.blend_type = "MULTIPLY"
-    links.new(attr.outputs["Color"], tint_mix.inputs[2])
-    links.new(diff_lyr_mix.outputs[0], tint_mix.inputs[1])
 
-    #Mix tint with not tinted by mb blue
-    matb_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
-    links.new(diff_lyr_mix.outputs[0], matb_lyr_mix.inputs["Color1"])
-    links.new(tint_mix.outputs["Color"], matb_lyr_mix.inputs["Color2"])
-    links.new(materialb_rgb.outputs["Blue"], matb_lyr_mix.inputs["Fac"])
+    tint_mix0 = node_tree.nodes.new("ShaderNodeMixRGB")
+    tint_mix0.name = "tint_mix_node0"
+    tint_mix0.blend_type = "MULTIPLY"
+    links.new(attr.outputs["Color"], tint_mix0.inputs[2])
+    links.new(lyr0diffusetex.outputs["Color"], tint_mix0.inputs[1])
+
+    #Mix tint with not tinted by mb alpha
+    matb_lyr_tint_mix0 = node_tree.nodes.new("ShaderNodeMixRGB")
+    links.new(lyr0diffusetex.outputs["Color"], matb_lyr_tint_mix0.inputs["Color1"])
+    links.new(tint_mix0.outputs["Color"], matb_lyr_tint_mix0.inputs["Color2"])
+    links.new(lyr0materialbtex.outputs["Alpha"], matb_lyr_tint_mix0.inputs["Fac"])
+    
+
+    tint_mix1 = node_tree.nodes.new("ShaderNodeMixRGB")
+    tint_mix1.name = "tint_mix_node1"
+    tint_mix1.blend_type = "MULTIPLY"
+    links.new(attr.outputs["Color"], tint_mix1.inputs[2])
+    links.new(lyr1diffusetex.outputs["Color"], tint_mix1.inputs[1])
+
+
+    #Mix tint with not tinted by mb alpha
+    matb_lyr_tint_mix1 = node_tree.nodes.new("ShaderNodeMixRGB")
+    links.new(lyr1diffusetex.outputs["Color"], matb_lyr_tint_mix1.inputs["Color1"])
+    links.new(tint_mix1.outputs["Color"], matb_lyr_tint_mix1.inputs["Color2"])
+    links.new(lyr1materialbtex.outputs["Alpha"], matb_lyr_tint_mix1.inputs["Fac"])
+    
+
+    # Mix diffuses by vertex color
+    diff_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
+    links.new(matb_lyr_tint_mix0.outputs["Color"], diff_lyr_mix.inputs["Color1"])
+    links.new(matb_lyr_tint_mix1.outputs["Color"], diff_lyr_mix.inputs["Color2"])
+    links.new(contrast.outputs["Color"], diff_lyr_mix.inputs["Fac"])
+
 
     # Mix dirt by vertex alpha
     dirt_mix = node_tree.nodes.new("ShaderNodeMixRGB")
@@ -350,7 +376,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     # Mix tinted diffuse with dirt
     lyr_dirt_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     lyr_dirt_mix.blend_type = "OVERLAY"
-    links.new(matb_lyr_mix.outputs["Color"], lyr_dirt_mix.inputs["Color1"])
+    links.new(diff_lyr_mix.outputs["Color"], lyr_dirt_mix.inputs["Color1"])
     links.new(dirtdiffusetex.outputs["Color"], lyr_dirt_mix.inputs["Color2"])
     links.new(dirt_mix.outputs["Color"], lyr_dirt_mix.inputs["Fac"])
 
@@ -358,7 +384,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     mata_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     links.new(lyr0materialatex.outputs["Color"], mata_lyr_mix.inputs["Color1"])
     links.new(lyr1materialatex.outputs["Color"], mata_lyr_mix.inputs["Color2"])
-    links.new(control_mix.outputs["Color"], mata_lyr_mix.inputs["Fac"])
+    links.new(contrast.outputs["Color"], mata_lyr_mix.inputs["Fac"])
 
     # Separate mixed _ma and link
     materiala_rgb = node_tree.nodes.new(type='ShaderNodeSeparateColor')
@@ -378,7 +404,7 @@ def RDR_create_2lyr_shader(b: ShaderBuilder):
     normal_lyr_mix = node_tree.nodes.new("ShaderNodeMixRGB")
     links.new(lyr0normaltex.outputs["Color"], normal_lyr_mix.inputs["Color1"])
     links.new(lyr1normaltex.outputs["Color"], normal_lyr_mix.inputs["Color2"])
-    links.new(control_mix.outputs["Color"], normal_lyr_mix.inputs["Fac"])
+    links.new(contrast.outputs["Color"], normal_lyr_mix.inputs["Fac"])
     link_normal(b, normal_lyr_mix)
 
     # link value parameters

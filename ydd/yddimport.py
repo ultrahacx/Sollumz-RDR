@@ -401,7 +401,7 @@ def create_ydd_obj(ydd_xml: DrawableDictionary, filepath: str):
             external_bones = None
 
         drawable_obj = create_drawable_obj(
-            drawable_xml, filepath, external_bones=external_bones, game=current_game)
+            drawable_xml, filepath,name= drawable_xml.hash, external_bones=external_bones, game=current_game)
         drawable_obj.parent = dict_obj
 
     return dict_obj

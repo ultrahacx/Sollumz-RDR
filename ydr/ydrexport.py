@@ -96,7 +96,7 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
         obj_parent = find_sollumz_parent(drawable_obj, SollumType.DRAWABLE_DICTIONARY)
         if obj_parent is not None:
             drawable_xml.name = remove_number_suffix(obj_parent.name.lower())
-            drawable_xml.hash = remove_number_suffix(drawable_obj.name.lower())
+            drawable_xml.hash = remove_number_suffix(drawable_obj.name)
         else:
             drawable_xml.name = remove_number_suffix(drawable_obj.name.lower())
 

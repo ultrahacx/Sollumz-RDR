@@ -41,6 +41,7 @@ def create_ydd_xml(ydd_obj: bpy.types.Object, exclude_skeleton: bool = False):
             armature_obj = None
 
         drawable_xml = create_drawable_xml(child, armature_obj=armature_obj)
+        drawable_xml.name = drawable_xml.name + ".#dd"
 
         if exclude_skeleton or child.type != "ARMATURE":
             drawable_xml.skeleton = None

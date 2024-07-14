@@ -261,7 +261,13 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
     # link input / output node to create geometry socket
     cptn = gnt.nodes.new("GeometryNodeCaptureAttribute")
     cptn.domain = "CORNER"
-    cptn.data_type = "FLOAT_COLOR"
+
+    if bpy.app.version >= (4, 2, 0):
+        cpt_attr = cptn.capture_items.new("RGBA", "Color")
+        cpt_attr.data_type = "FLOAT_COLOR"
+    else:
+        cptn.data_type = "FLOAT_COLOR"
+        
     gnt.links.new(input.outputs["Geometry"], cptn.inputs["Geometry"])
     gnt.links.new(cptn.outputs["Geometry"], output.inputs["Geometry"])
 
@@ -352,9 +358,9 @@ def create_tinted_geometry_graph():  # move to blenderhelper.py?
 
     switch = gnt.nodes.new("GeometryNodeSwitch")
     switch.input_type = "FLOAT"
-    gnt.links.new(compare.outputs[0], switch.inputs[0])
-    gnt.links.new(preview.outputs[0], switch.inputs[3])
-    gnt.links.new(mathns[8].outputs[0], switch.inputs[2])
+    gnt.links.new(compare.outputs[0], switch.inputs["Switch"])
+    gnt.links.new(preview.outputs[0], switch.inputs["True"])
+    gnt.links.new(mathns[8].outputs[0], switch.inputs["False"])
 
     # create and link vector
     comb = gnt.nodes.new("ShaderNodeCombineRGB")

@@ -153,6 +153,7 @@ class ShaderParameterCBufferDef(ShaderParameterDef):
         self.length = AttributeProperty("length", 0)
         self.offset = AttributeProperty("offset", 0)
         self.value_type = AttributeProperty("value_type", "")
+        self.count = AttributeProperty("count", 0)
         
 
 

@@ -1174,10 +1174,14 @@ def create_shader_parameters_list_template(shader_def: Optional[ShaderDef]) -> l
                         param.y = param_def.y
                         param.z = param_def.z
                     case ShaderParameterType.FLOAT4:
-                        param.x = param_def.x
-                        param.y = param_def.y
-                        param.z = param_def.z
-                        param.w = param_def.w
+                        if param_def.count <= 0:
+                            param.x = param_def.x
+                            param.y = param_def.y
+                            param.z = param_def.z
+                            param.w = param_def.w
+                        else:
+                            param.is_array = True
+                            param.values = [Vector((0,0,0,0)) for _ in range(param_def.count)]
             case ShaderParameterType.UNKNOWN:
                 param = UnknownShaderParameter()
                 param.index = param_def.index
@@ -1256,18 +1260,25 @@ def get_shaders_from_blender(materials):
                     param = CBufferShaderParameter()
                     param.x = node.get(0)
                     buffer_length = 4
-                    if node.num_cols > 1:
-                        param.y = node.get(1)
-                        buffer_length += 4
-                    if node.num_cols > 2:
-                        param.z = node.get(2)
-                        buffer_length += 4
-                    if node.num_cols > 3:
-                        param.w = node.get(3)
-                        buffer_length += 4
-                    param.buffer = node.extra_property.buffer
-                    param.offset = node.extra_property.offset
-                    param.length = buffer_length
+                    if node.num_rows <= 1:
+                        if node.num_cols > 1:
+                            param.y = node.get(1)
+                            buffer_length += 4
+                        if node.num_cols > 2:
+                            param.z = node.get(2)
+                            buffer_length += 4
+                        if node.num_cols > 3:
+                            param.w = node.get(3)
+                            buffer_length += 4
+                        param.buffer = node.extra_property.buffer
+                        param.offset = node.extra_property.offset
+                        param.length = buffer_length
+                    else:
+                        param.is_array = True
+                        param.values = [Vector((0,0,0,0)) for _ in range(node.num_rows)]
+                        param.buffer = node.extra_property.buffer
+                        param.offset = node.extra_property.offset
+                        param.length = node.num_rows * node.num_cols * 4
                 elif isinstance(param_def, ShaderParameterSamplerDef):
                     param = SamplerShaderParameter()
                     param.x = node.get(0)

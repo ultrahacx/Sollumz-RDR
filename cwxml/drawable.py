@@ -247,15 +247,24 @@ class CBufferShaderParameter(ShaderParameter):
         element.set("buffer", str(int(self.buffer)))
         element.set("offset", str(int(self.offset)))
         element.set("length", str(self.length))
+        
+        if hasattr(self, "is_array") and not self.is_array:
+            if hasattr(self, "x") and self.x is not None:
+                element.set("x", str(round(self.x, 5)))
+            if hasattr(self, "y") and self.y is not None:
+                element.set("y", str(round(self.y, 5)))
+            if hasattr(self, "z") and self.z is not None:
+                element.set("z", str(round(self.z, 5)))
+            if hasattr(self, "w") and self.w is not None:
+                element.set("w", str(round(self.w, 5)))
+        else:
+            array_parent = ET.Element("Array")
+            for value in self.values:
+                child_elem = Vector4Property("Item", value).to_xml()
+                array_parent.append(child_elem)
+            element.append(array_parent)
 
-        if hasattr(self, "x") and self.x is not None:
-            element.set("x", str(round(self.x, 5)))
-        if hasattr(self, "y") and self.y is not None:
-            element.set("y", str(round(self.y, 5)))
-        if hasattr(self, "z") and self.z is not None:
-            element.set("z", str(round(self.z, 5)))
-        if hasattr(self, "w") and self.w is not None:
-            element.set("w", str(round(self.w, 5)))
+        
 
         return element
 

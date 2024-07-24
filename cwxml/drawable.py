@@ -34,7 +34,12 @@ from .bound import (
     BoundGeometryBVH,
     BoundSphere,
     BoundFile,
-    RDRBoundFile
+    RDRBoundBox,
+    RDRBoundFile,
+    RDRBoundCapsule,
+    RDRBoundCylinder,
+    RDRBoundDisc,
+    RDRBoundSphere
 )
 from collections.abc import MutableSequence
 from .drawable_RDR import BoneMappingProperty, VertexLayout, VerticesProperty, IndicesProperty
@@ -950,6 +955,16 @@ class Drawable(ElementTree, AbstractClass):
                 bound = None
                 if bound_type == "Composite":
                     bound = RDRBoundFile.from_xml(child)
+                elif bound_type == "Box":
+                    bound = RDRBoundBox.from_xml(child)
+                elif bound_type == "Sphere":
+                    bound = RDRBoundSphere.from_xml(child)
+                elif bound_type == "Capsule":
+                    bound = RDRBoundCapsule.from_xml(child)
+                elif bound_type == "Cylinder":
+                    bound = RDRBoundCylinder.from_xml(child)
+                elif bound_type == "Disc":
+                    bound = RDRBoundDisc.from_xml(child)
                 else:
                     raise Exception("Unable to create RDR bound since its not composite and hence unimplemented")
                 if bound:

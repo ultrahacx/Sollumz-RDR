@@ -182,7 +182,11 @@ def bound_geom_has_mats(geom_obj: bpy.types.Object):
 
 def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Initialize ``bound_xml`` bound child properties from object blender properties."""
-    bound_xml.composite_transform = get_composite_transforms(obj).transposed()
+    composite_transform = get_composite_transforms(obj).transposed()
+    if current_game == SollumzGame.GTA or (current_game == SollumzGame.RDR and not composite_transform.is_identity):
+        bound_xml.composite_transform = composite_transform
+    else:
+        delattr(bound_xml, "composite_transform")
     if obj.type == "MESH":
         bbmin, bbmax = get_bound_extents(obj)
     elif obj.type == "EMPTY":
@@ -597,7 +601,10 @@ def set_composite_xml_flags(bound_xml: BoundChild, obj: bpy.types.Object):
     elif current_game == SollumzGame.RDR:
         set_flags("type_flags")
         set_flags("include_flags")
-        bound_xml.unk_11h = obj.bound_properties.unk_11h
+        if obj.bound_properties.unk_11h > 0:
+            bound_xml.unk_11h = obj.bound_properties.unk_11h
+        else:
+            delattr(bound_xml, "unk_11h")
 
 
 def get_composite_transforms(bound_obj: bpy.types.Object):

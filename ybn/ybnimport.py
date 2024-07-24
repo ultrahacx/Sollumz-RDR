@@ -79,8 +79,10 @@ def create_rdr_bound(bound_xml: RDRBoundFile, name: Optional[str] = None):
     return obj 
 
 
-def create_bound_object(bound_xml: BoundChild | Bound):
+def create_bound_object(bound_xml: BoundChild | Bound, game: SollumzGame= SollumzGame.GTA):
     """Create a bound object based on ``bound_xml.type``"""
+    global current_game
+    current_game = game
     if bound_xml.type == "Box":
         return create_bound_box(bound_xml)
 

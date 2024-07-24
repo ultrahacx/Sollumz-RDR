@@ -154,6 +154,50 @@ class BoundCloth(BoundChild):
     type = "Cloth"
 
 
+class RDRBoundBox(BoundChild):
+    type = "Box"
+
+    def __init__(self):
+        global current_game
+        current_game = SollumzGame.RDR
+        super().__init__()
+
+
+class RDRBoundSphere(BoundChild):
+    type = "Sphere"
+    
+    def __init__(self):
+        global current_game
+        current_game = SollumzGame.RDR
+        super().__init__()
+
+
+class RDRBoundCapsule(BoundChild):
+    type = "Capsule"
+
+    def __init__(self):
+        global current_game
+        current_game = SollumzGame.RDR
+        super().__init__()
+
+
+class RDRBoundCylinder(BoundChild):
+    type = "Cylinder"
+
+    def __init__(self):
+        global current_game
+        current_game = SollumzGame.RDR
+        super().__init__()
+
+
+class RDRBoundDisc(BoundChild):
+    type = "Disc"
+
+    def __init__(self):
+        global current_game
+        current_game = SollumzGame.RDR
+        super().__init__()
+
 class VerticesProperty(ElementProperty):
     value_types = (list)
 

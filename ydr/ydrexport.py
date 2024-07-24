@@ -1094,7 +1094,7 @@ def create_embedded_collision_xmls(drawable_obj: bpy.types.Object, drawable_xml:
             bound_xml = create_bound_xml(
                 child, auto_calc_inertia, auto_calc_volume)
 
-            if not bound_xml.composite_transform.is_identity:
+            if current_game == SollumzGame.GTA and not bound_xml.composite_transform.is_identity:
                 logger.warning(
                     f"Embedded bound '{child.name}' has transforms (location, rotation, scale) but is not parented to a Bound Composite. Parent the collision to a Bound Composite in order for the transforms to work in-game.")
 

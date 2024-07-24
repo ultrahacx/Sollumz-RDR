@@ -567,7 +567,7 @@ def create_embedded_collisions(bounds_xml: list[BoundChild], drawable_obj: bpy.t
                 bound_obj = create_rdr_bound(bound_xml)
             composite_objs.append(bound_obj)
         else:
-            bound_obj = create_bound_object(bound_xml)
+            bound_obj = create_bound_object(bound_xml, current_game)
             bound_objs.append(bound_obj)
 
     for obj in composite_objs:

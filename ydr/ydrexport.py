@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from typing import Callable, Optional
 from collections import defaultdict
 from mathutils import Quaternion, Vector, Matrix
-
+import time, aud 
 from ..lods import operates_on_lod_level
 from .model_data import get_faces_subset
 
@@ -109,6 +109,11 @@ def create_drawable_xml(drawable_obj: bpy.types.Object, armature_obj: Optional[b
     if not drawable_xml.shader_group.shaders:
         logger.warning(
             f"{drawable_xml.name} has no Sollumz materials! Aborting...")
+        audpath = os.path.dirname(os.path.realpath(__file__)) + "\\nosollumzmat.mp3"
+        sound = aud.Sound(audpath)
+        device = aud.Device()
+        sound_buffered = aud.Sound.cache(sound)
+        device.play(sound_buffered)
         return drawable_xml
 
     if armature_obj or drawable_obj.type == "ARMATURE":

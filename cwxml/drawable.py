@@ -1,6 +1,5 @@
 import io
 import os
-from ..sollumz_properties import SollumzGame
 from mathutils import Matrix
 import numpy as np
 from numpy.typing import NDArray
@@ -34,17 +33,11 @@ from .bound import (
     BoundGeometryBVH,
     BoundSphere,
     BoundFile,
-    RDRBoundBox,
     RDRBoundFile,
-    RDRBoundCapsule,
-    RDRBoundCylinder,
-    RDRBoundDisc,
-    RDRBoundSphere
 )
 from collections.abc import MutableSequence
 from .drawable_RDR import BoneMappingProperty, VertexLayout, VerticesProperty, IndicesProperty
 
-current_game = SollumzGame.GTA
 
 class YDD:
 
@@ -52,15 +45,7 @@ class YDD:
 
     @staticmethod
     def from_xml_file(filepath):
-        global current_game
-        tree = ET.parse(filepath)
-        gameTag = tree.getroot().tag
-        if "RDR2" in gameTag:
-            current_game = SollumzGame.RDR
-            return RDR2DrawableDictionary.from_xml_file(filepath)
-        else:
-            current_game = SollumzGame.GTA
-            return DrawableDictionary.from_xml_file(filepath)
+        return RDR2DrawableDictionary.from_xml_file(filepath)
         
 
     @staticmethod
@@ -74,14 +59,7 @@ class YDR:
 
     @staticmethod
     def from_xml_file(filepath):
-        global current_game
-        tree = ET.parse(filepath)
-        gameTag = tree.getroot().tag
-        if "RDR2" in gameTag:
-            current_game = SollumzGame.RDR
-        else:
-            current_game = SollumzGame.GTA
-        return Drawable(gameTag).from_xml_file(filepath)
+        return Drawable.from_xml_file(filepath)
 
     @staticmethod
     def write_xml(drawable, filepath):
@@ -94,18 +72,7 @@ class Texture(ElementTree):
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name", "")
-        if current_game == SollumzGame.GTA:        
-            self.unk32 = ValueProperty("Unk32", 0)
-            self.usage = TextProperty("Usage")
-            self.usage_flags = FlagsProperty("UsageFlags")
-            self.extra_flags = ValueProperty("ExtraFlags", 0)
-            self.width = ValueProperty("Width", 0)
-            self.height = ValueProperty("Height", 0)
-            self.miplevels = ValueProperty("MipLevels", 0)
-            self.format = TextProperty("Format")
-            self.filename = TextProperty("FileName", "")
-        elif current_game == SollumzGame.RDR:
-            self.flags = ValueProperty("Flags", 0)
+        self.flags = ValueProperty("Flags", 0)
 
 
 class TextureDictionaryList(ListProperty):
@@ -172,13 +139,9 @@ class TextureShaderParameter(ShaderParameter):
 
     def __init__(self):
         super().__init__()
-
-        if current_game == SollumzGame.GTA:
-            self.texture_name = TextProperty("Name")
-        elif current_game == SollumzGame.RDR:
-            self.texture_name = AttributeProperty("texture", "")
-            self.index = AttributeProperty("index", 0)
-            self.flags = AttributeProperty("flags", 0)
+        self.texture_name = AttributeProperty("texture", "")
+        self.index = AttributeProperty("index", 0)
+        self.flags = AttributeProperty("flags", 0)
 
     def __hash__(self) -> int:
         return hash((self.name, self.type, self.texture_name))
@@ -397,14 +360,9 @@ class Shader(ElementTree):
     def __init__(self):
         super().__init__()
         self.name = TextProperty("Name", "")
-        if current_game == SollumzGame.GTA:
-            self.filename = TextProperty("FileName", "")
-            self.render_bucket = ValueProperty("RenderBucket", 0)
-            self.parameters = ParametersList()
-        elif current_game == SollumzGame.RDR:
-            self.draw_bucket = ValueProperty("DrawBucket", 0)
-            self.draw_bucket_flag = ValueProperty("DrawBucketFlag", False)
-            self.parameters = RDRParameters()
+        self.draw_bucket = ValueProperty("DrawBucket", 0)
+        self.draw_bucket_flag = ValueProperty("DrawBucketFlag", False)
+        self.parameters = RDRParameters()
 
     def __hash__(self) -> int:
         params_elem = self.get_element("parameters")
@@ -427,10 +385,7 @@ class ShaderGroup(ElementTree):
 
     def __init__(self):
         super().__init__()
-        if current_game == SollumzGame.GTA:
-            self.texture_dictionary = TextureDictionaryList()
-        elif current_game == SollumzGame.RDR:
-            self.texture_dictionary = RDRTextureDictionaryList()
+        self.texture_dictionary = RDRTextureDictionaryList()
         self.shaders = ShadersList()
 
 
@@ -473,15 +428,9 @@ class Bone(ElementTree):
         # by default if a bone don't have parent or sibling there should be -1 instead of 0
         self.parent_index = ValueProperty("ParentIndex", -1)
         self.transform_unk = QuaternionProperty("TransformUnk")
-        
-        if current_game == SollumzGame.GTA:
-            self.sibling_index = ValueProperty("SiblingIndex", -1)
-            self.translation = VectorProperty("Translation")
-        elif current_game == SollumzGame.RDR:
-            self.sibling_index = ValueProperty("NextSiblingIndex", -1)
-            self.last_sibling_index = ValueProperty("LastSiblingIndex", -1)
-            self.translation = VectorProperty("Position")
-
+        self.sibling_index = ValueProperty("NextSiblingIndex", -1)
+        self.last_sibling_index = ValueProperty("LastSiblingIndex", -1)
+        self.translation = VectorProperty("Position")
         self.rotation = QuaternionProperty("Rotation")
         self.scale = VectorProperty("Scale")
         
@@ -497,31 +446,12 @@ class Skeleton(ElementTree):
 
     def __init__(self):
         super().__init__()
-        # copied from player_zero.yft
-        # what do the following 4 unks mean and what are they for still remain unknown
-        # before we've been using 0 for default value
-        # but it turns out that if unk50 and unk54 are 0 it would just crash the game in some cases, e.g. modifying the yft of a streamedped, player_zero.yft for example
-        # as we don't know how to calc all those unks we should use a hacky default value working in most if not all cases, so I replace 0 with the stuff from player_zero.yft
-        # unknown_1c is either 0 or 16777216, the latter in most cases
-        # oiv seems to get unknown_50 and unknown_54 correct somehow
-        # unknown_58 is DataCRC in gims, oiv doesn't seem to calc it correctly so they leave it for user to edit this
-
-        # UPDATE
-        # from: NcProductions and ArthurLopes
-        # to my knowledge, having two addon peds with the same unknown 1C, 50, 54 and 58 value will cause one of them to be messed up when spawned together. for example, first add-on will spawn without problem, the second will have the bones messed up.
-        # fixing this issue is simple by changing the value like you mentioned.
-        if current_game == SollumzGame.GTA:
-            self.unknown_1c = ValueProperty("Unknown1C", 16777216)
-            self.unknown_50 = ValueProperty("Unknown50", 567032952)
-            self.unknown_54 = ValueProperty("Unknown54", 2134582703)
-            self.unknown_58 = ValueProperty("Unknown58", 2503907467)
-        elif current_game == SollumzGame.RDR:
-            self.unknown_24 = ValueProperty("Unknown_24", 16777216)
-            self.unknown_50 = TextProperty("Unknown_50", "VRJTjUA_0xFD1B4CE2")
-            self.unknown_54 = TextProperty("Unknown_54", "JcfuiBB_0x89E74EEE")
-            self.unknown_58 = TextProperty("Unknown_58", "IdlqQAA_0x825CEBDD")
-            self.unknown_60 = ValueProperty("Unknown_60", 257)
-            self.parent_bone_tag = ValueProperty("ParentBoneTag", 0)
+        self.unknown_24 = ValueProperty("Unknown_24", 16777216)
+        self.unknown_50 = TextProperty("Unknown_50", "VRJTjUA_0xFD1B4CE2")
+        self.unknown_54 = TextProperty("Unknown_54", "JcfuiBB_0x89E74EEE")
+        self.unknown_58 = TextProperty("Unknown_58", "IdlqQAA_0x825CEBDD")
+        self.unknown_60 = ValueProperty("Unknown_60", 257)
+        self.parent_bone_tag = ValueProperty("ParentBoneTag", 0)
         self.bones = BonesList("Bones")
 
 
@@ -793,20 +723,13 @@ class Geometry(ElementTree):
         super().__init__()
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
         self.bounding_box_max = VectorProperty("BoundingBoxMax")
-
-        if current_game == SollumzGame.GTA:
-            self.shader_index = ValueProperty("ShaderIndex", 0)
-            self.bone_ids = BoneIDProperty()
-            self.vertex_buffer = VertexBuffer()
-            self.index_buffer = IndexBuffer()
-        elif current_game == SollumzGame.RDR:
-            self.shader_index = ValueProperty("ShaderID", 0)
-            self.colour_semantic = ValueProperty("ColourSemantic", 0)
-            self.bone_index = ValueProperty("BoneIndex", -1)
-            self.bone_count = ValueProperty("BonesCount", 0)
-            self.vertex_layout = VertexLayout()
-            self.vertices = VerticesProperty("Vertices")
-            self.indices = IndicesProperty("Indices")
+        self.shader_index = ValueProperty("ShaderID", 0)
+        self.colour_semantic = ValueProperty("ColourSemantic", 0)
+        self.bone_index = ValueProperty("BoneIndex", -1)
+        self.bone_count = ValueProperty("BonesCount", 0)
+        self.vertex_layout = VertexLayout()
+        self.vertices = VerticesProperty("Vertices")
+        self.indices = IndicesProperty("Indices")
 
 
 class GeometriesList(ListProperty):
@@ -822,15 +745,10 @@ class DrawableModel(ElementTree):
         self.flags = ValueProperty("Flags", 0)
         self.has_skin = ValueProperty("HasSkin", 0)
         self.bone_index = ValueProperty("BoneIndex", 0)
-        
-        if current_game == SollumzGame.GTA:
-            self.render_mask = ValueProperty("RenderMask", 0)
-            self.matrix_count = ValueProperty("Unknown1", 0)
-        elif current_game == SollumzGame.RDR:
-            self.bone_count = ValueProperty("BonesCount", 0)
-            self.bone_mapping = BoneMappingProperty("BoneMapping")
-            self.bounding_box_min = VectorProperty("BoundingBoxMin")
-            self.bounding_box_max = VectorProperty("BoundingBoxMax")
+        self.bone_count = ValueProperty("BonesCount", 0)
+        self.bone_mapping = BoneMappingProperty("BoneMapping")
+        self.bounding_box_min = VectorProperty("BoundingBoxMin")
+        self.bounding_box_max = VectorProperty("BoundingBoxMax")
 
         self.geometries = GeometriesList()    
 
@@ -854,7 +772,7 @@ class LodList(ElementTree):
         self.models = LodModelsList()
 
 class Drawable(ElementTree, AbstractClass):
-    tag_name = "Drawable"
+    tag_name = "RDR2Drawable"
 
     @property
     def is_empty(self) -> bool:
@@ -868,17 +786,15 @@ class Drawable(ElementTree, AbstractClass):
     def all_models(self) -> list[DrawableModel]:
         return self.drawable_models_high + self.drawable_models_med + self.drawable_models_low + self.drawable_models_vlow
 
-    def __init__(self, tag_name: str = "Drawable"):
+    def __init__(self, tag_name: str = "RDR2Drawable"):
         self.tag_name = tag_name
         super().__init__()
         # Only in fragment drawables
-        self.game = current_game
         self.matrix = MatrixProperty("Matrix")
         self.matrices = DrawableMatrices("Matrices")
 
         self.name = TextProperty("Name", "")
-        if current_game == SollumzGame.RDR:
-            self.hash = TextProperty("Hash", "")
+        self.hash = TextProperty("Hash", "")
         self.bounding_sphere_center = VectorProperty("BoundingSphereCenter")
         self.bounding_sphere_radius = ValueProperty("BoundingSphereRadius")
         self.bounding_box_min = VectorProperty("BoundingBoxMin")
@@ -893,25 +809,12 @@ class Drawable(ElementTree, AbstractClass):
         self.flags_vlow = ValueProperty("FlagsVlow", 0)
         self.shader_group = ShaderGroup()
         self.skeleton = Skeleton()
-
-        if current_game == SollumzGame.GTA: 
-            self.joints = Joints()
-            self.drawable_models_high = DrawableModelList(
-                "DrawableModelsHigh")
-            self.drawable_models_med = DrawableModelList(
-                "DrawableModelsMedium")
-            self.drawable_models_low = DrawableModelList(
-                "DrawableModelsLow")
-            self.drawable_models_vlow = DrawableModelList(
-                "DrawableModelsVeryLow")
-            self.lights = Lights()
-        elif current_game == SollumzGame.RDR:
-            self.version = AttributeProperty("version", 1)
-            self.extra_skeletons = ExtraSkeletonsList()
-            self.drawable_models_high = LodList("LodHigh")
-            self.drawable_models_med = LodList("LodMed")
-            self.drawable_models_low = LodList("LodLow")
-            self.drawable_models_vlow = LodList("LodVeryLow")
+        self.version = AttributeProperty("version", 1)
+        self.extra_skeletons = ExtraSkeletonsList()
+        self.drawable_models_high = LodList("LodHigh")
+        self.drawable_models_med = LodList("LodMed")
+        self.drawable_models_low = LodList("LodLow")
+        self.drawable_models_vlow = LodList("LodVeryLow")
         
         self.bounds = []
         
@@ -922,54 +825,30 @@ class Drawable(ElementTree, AbstractClass):
     def from_xml(cls, element: ET.Element):
         new = super().from_xml(element)
         bounds = element.findall("Bounds")
-        if current_game == SollumzGame.GTA:
-            for child in bounds:
-                bound_type = child.get("type")
-                bound = None
-                if bound_type == "Composite":
-                    bound = BoundComposite.from_xml(child)
-                elif bound_type == "Box":
-                    bound = BoundBox.from_xml(child)
-                elif bound_type == "Sphere":
-                    bound = BoundSphere.from_xml(child)
-                elif bound_type == "Capsule":
-                    bound = BoundCapsule.from_xml(child)
-                elif bound_type == "Cylinder":
-                    bound = BoundCylinder.from_xml(child)
-                elif bound_type == "Disc":
-                    bound = BoundDisc.from_xml(child)
-                elif bound_type == "Cloth":
-                    bound = BoundCloth.from_xml(child)
-                elif bound_type == "Geometry":
-                    bound = BoundGeometry.from_xml(child)
-                elif bound_type == "GeometryBVH":
-                    bound = BoundGeometryBVH.from_xml(child)
-                    
-                if bound:
-                    bound.tag_name = "Bounds"
-                    new.bounds.append(bound)
-
-        elif current_game == SollumzGame.RDR:
-            for child in bounds:
-                bound_type = child.get("type")
-                bound = None
-                if bound_type == "Composite":
-                    bound = RDRBoundFile.from_xml(child)
-                elif bound_type == "Box":
-                    bound = RDRBoundBox.from_xml(child)
-                elif bound_type == "Sphere":
-                    bound = RDRBoundSphere.from_xml(child)
-                elif bound_type == "Capsule":
-                    bound = RDRBoundCapsule.from_xml(child)
-                elif bound_type == "Cylinder":
-                    bound = RDRBoundCylinder.from_xml(child)
-                elif bound_type == "Disc":
-                    bound = RDRBoundDisc.from_xml(child)
-                else:
-                    raise Exception("Unable to create RDR bound since its not composite and hence unimplemented")
-                if bound:
-                    bound.tag_name = "Bounds"
-                    new.bounds.append(bound)
+        for child in bounds:
+            bound_type = child.get("type")
+            bound = None
+            if bound_type == "Composite":
+                bound = RDRBoundFile.from_xml(child)
+            elif bound_type == "Box":
+                bound = BoundBox.from_xml(child)
+            elif bound_type == "Sphere":
+                bound = BoundSphere.from_xml(child)
+            elif bound_type == "Capsule":
+                bound = BoundCapsule.from_xml(child)
+            elif bound_type == "Cylinder":
+                bound = BoundCylinder.from_xml(child)
+            elif bound_type == "Disc":
+                bound = BoundDisc.from_xml(child)
+            elif bound_type == "Geometry":
+                bound = BoundGeometry.from_xml(child)
+            elif bound_type == "GeometryBVH":
+                bound = BoundGeometryBVH.from_xml(child)
+            else:
+                raise Exception("Unable to create RDR bound since its not composite and hence unimplemented")
+            if bound:
+                bound.tag_name = "Bounds"
+                new.bounds.append(bound)
        
         return new
 
@@ -986,7 +865,6 @@ class RDR2DrawableDictionary(ElementTree, AbstractClass):
 
     def __init__(self) -> None:
         super().__init__()
-        self.game = current_game
         self.version = AttributeProperty("version", 1)
         self.drawables = []
 
@@ -1024,7 +902,6 @@ class DrawableDictionary(MutableSequence, Element):
 
     def __init__(self, value=None):
         super().__init__()
-        self.game = current_game
         self._value = value or []
 
     def __getitem__(self, name):

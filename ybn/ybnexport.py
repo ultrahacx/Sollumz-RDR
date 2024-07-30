@@ -40,53 +40,43 @@ T_BoundChild = TypeVar("T_BoundChild", bound=BoundChild)
 T_PolyCylCap = TypeVar("T_PolyCylCap", bound=PolyCylinder | PolyCapsule)
 
 MAX_VERTICES = 32767
-current_game = SollumzGame.GTA
 
 def export_ybn(obj: bpy.types.Object, filepath: str) -> bool:
     export_settings = get_export_settings()
-
-    global current_game
-    current_game = obj.sollum_game_type
     
-    if current_game == SollumzGame.GTA:
-        bounds = BoundFile()
-        composite = create_composite_xml(
-            obj, export_settings.auto_calculate_inertia, export_settings.auto_calculate_volume)
-        bounds.composite = composite
-    elif current_game == SollumzGame.RDR:
-        bounds = RDRBoundFile("RDR2Bounds")
+    bounds = RDRBoundFile("RDR2Bounds")
 
-        composite = create_composite_xml(
-            obj, export_settings.auto_calculate_inertia, export_settings.auto_calculate_volume)
+    composite = create_composite_xml(
+        obj, export_settings.auto_calculate_inertia, export_settings.auto_calculate_volume)
 
-        bb_min_all = [[],[],[]]
-        bb_max_all = [[],[],[]]
+    bb_min_all = [[],[],[]]
+    bb_max_all = [[],[],[]]
 
-        for comp in composite.children:
-            boxmin = comp.box_min
-            boxmax = comp.box_max
+    for comp in composite.children:
+        boxmin = comp.box_min
+        boxmax = comp.box_max
 
-            bb_min_all[0].append(boxmin.x)
-            bb_min_all[1].append(boxmin.y)
-            bb_min_all[2].append(boxmin.z)
+        bb_min_all[0].append(boxmin.x)
+        bb_min_all[1].append(boxmin.y)
+        bb_min_all[2].append(boxmin.z)
 
-            bb_max_all[0].append(boxmax.x)
-            bb_max_all[1].append(boxmax.y)
-            bb_max_all[2].append(boxmax.z)
-        
-        calcmin = Vector((min(bb_min_all[0]), min(bb_min_all[1]), min(bb_min_all[2])))
-        calcmax = Vector((max(bb_max_all[0]), min(bb_max_all[1]), min(bb_max_all[2])))
+        bb_max_all[0].append(boxmax.x)
+        bb_max_all[1].append(boxmax.y)
+        bb_max_all[2].append(boxmax.z)
+    
+    calcmin = Vector((min(bb_min_all[0]), min(bb_min_all[1]), min(bb_min_all[2])))
+    calcmax = Vector((max(bb_max_all[0]), min(bb_max_all[1]), min(bb_max_all[2])))
 
-        bounds.box_min = calcmin
-        bounds.box_max = calcmax
-        bounds.box_center = get_bound_center_from_bounds(bounds.box_min, bounds.box_max)
-        bounds.sphere_center = bounds.box_center
-        bounds.sphere_radius = get_sphere_radius(
-            bounds.box_max, bounds.box_center)
+    bounds.box_min = calcmin
+    bounds.box_max = calcmax
+    bounds.box_center = get_bound_center_from_bounds(bounds.box_min, bounds.box_max)
+    bounds.sphere_center = bounds.box_center
+    bounds.sphere_radius = get_sphere_radius(
+        bounds.box_max, bounds.box_center)
 
-        bounds.mass = obj.bound_properties.mass
-        bounds.inertia = Vector(obj.bound_properties.inertia)
-        bounds.children = composite.children
+    bounds.mass = obj.bound_properties.mass
+    bounds.inertia = Vector(obj.bound_properties.inertia)
+    bounds.children = composite.children
 
     bounds.write_xml(filepath)
     return True
@@ -101,7 +91,7 @@ def create_composite_xml(
 ) -> BoundComposite:
     composite_xml = BoundComposite()
     
-    if embedded_col and obj.sollum_game_type == SollumzGame.RDR:
+    if embedded_col:
         composite_xml = RDRBoundFile()
 
     for child in obj.children:
@@ -183,7 +173,7 @@ def bound_geom_has_mats(geom_obj: bpy.types.Object):
 def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     """Initialize ``bound_xml`` bound child properties from object blender properties."""
     composite_transform = get_composite_transforms(obj).transposed()
-    if current_game == SollumzGame.GTA or (current_game == SollumzGame.RDR and not composite_transform.is_identity):
+    if not composite_transform.is_identity:
         bound_xml.composite_transform = composite_transform
     else:
         delattr(bound_xml, "composite_transform")
@@ -214,12 +204,7 @@ def init_bound_xml(bound_xml: T_Bound, obj: bpy.types.Object, auto_calc_inertia:
     if auto_calc_inertia:
         bound_xml.inertia = calculate_inertia(
             bound_xml.box_min, bound_xml.box_max)
-    if current_game == SollumzGame.GTA:
-        if auto_calc_volume:
-            bound_xml.volume = calculate_volume(
-                bound_xml.box_min, bound_xml.box_max)
-    elif current_game == SollumzGame.RDR:
-        bound_xml.mass = obj.bound_properties.mass
+    bound_xml.mass = obj.bound_properties.mass
 
     return bound_xml
 
@@ -228,10 +213,6 @@ def create_bound_geometry_xml(obj: bpy.types.Object, auto_calc_inertia: bool = F
     geom_xml = init_bound_child_xml(
         BoundGeometry(), obj, auto_calc_inertia, auto_calc_volume)
     set_bound_geom_xml_properties(geom_xml, obj)
-
-    if current_game == SollumzGame.GTA:
-        geom_xml.material_index = 0
-
     create_bound_geom_xml_data(geom_xml, obj)
 
     return geom_xml
@@ -240,10 +221,6 @@ def create_bound_geometry_xml(obj: bpy.types.Object, auto_calc_inertia: bool = F
 def create_bvh_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_calc_volume: bool = False):
     geom_xml = init_bound_child_xml(
             BoundGeometryBVH(), obj, auto_calc_inertia, auto_calc_volume)
-    
-    if current_game == SollumzGame.GTA:
-        geom_xml.material_index = 0
-
     create_bound_geom_xml_data(geom_xml, obj)
 
     return geom_xml
@@ -252,9 +229,7 @@ def create_bvh_xml(obj: bpy.types.Object, auto_calc_inertia: bool = False, auto_
 def create_bound_geom_xml_data(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object):
     """Create the vertices, polygons, and vertex colors of a ``BoundGeometry`` or ``BoundGeometryBVH`` from ``obj``."""
     create_bound_xml_polys(geom_xml, obj)
-    geometry_center = center_verts_to_geometry(geom_xml)
-    if current_game == SollumzGame.GTA:
-        geom_xml.geometry_center = geometry_center
+    center_verts_to_geometry(geom_xml)
 
     num_vertices = len(geom_xml.vertices)
 
@@ -271,10 +246,7 @@ def center_verts_to_geometry(geom_xml: BoundGeometry | BoundGeometryBVH):
     """Position verts such that the origin is at their center of geometry. Returns the center of geometry."""
     verts = np.array([tuple(v) for v in geom_xml.vertices], dtype=np.float32)
 
-    if current_game == SollumzGame.GTA:
-        geom_center = Vector(np.average(verts, axis=0))
-    elif current_game == SollumzGame.RDR:
-        geom_center = get_bound_center_from_bounds(geom_xml.box_min, geom_xml.box_max)
+    geom_center = get_bound_center_from_bounds(geom_xml.box_min, geom_xml.box_max)
     geom_xml.vertices = [
         Vector(vert) - geom_center for vert in geom_xml.vertices]
 
@@ -282,8 +254,6 @@ def center_verts_to_geometry(geom_xml: BoundGeometry | BoundGeometryBVH):
         geom_xml.vertices_2 = [
             Vector(vert) - geom_center for vert in geom_xml.vertices_2]
 
-    if current_game == SollumzGame.GTA:
-        return Vector(geom_center)
 
 
 def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.types.Object):
@@ -292,25 +262,7 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
     ind_by_mat: dict[bpy.types.Material, int] = {}
 
     def get_vert_index(vert: Vector, vert_color: Optional[tuple[int, int, int, int]] = None):
-        default_vert_color = (255, 255, 255, 255)
-
-        if current_game == SollumzGame.GTA:
-            # These are safety checks in case the user mixed poly primitives and poly meshes with color attributes
-            # This doesn't occur in original .ybns, if they have vertex colors, only poly triangles (meshes) are used.
-            if vert_color is not None and len(geom_xml.vertex_colors) != len(geom_xml.vertices):
-                # This vertex has color but previous ones didn't, assign a default color to all previous vertices
-                for _ in range(len(geom_xml.vertex_colors), len(geom_xml.vertices)):
-                    geom_xml.vertex_colors.append(default_vert_color)
-
-            if vert_color is None and len(geom_xml.vertex_colors) != 0:
-                # There are already vertex colors in this geometry, assign a default color
-                vert_color = default_vert_color
-
-            # Tuple to uniquely identify this vertex and remove duplicates
-            # Must be tuple since Vector is not hashable
-            vertex_id = (*vert, *(vert_color or default_vert_color))
-        elif current_game == SollumzGame.RDR:
-            vertex_id = vert.to_tuple()
+        vertex_id = vert.to_tuple()
 
         if vertex_id in ind_by_vert:
             return ind_by_vert[vertex_id]
@@ -318,8 +270,6 @@ def create_bound_xml_polys(geom_xml: BoundGeometry | BoundGeometryBVH, obj: bpy.
         vert_ind = len(ind_by_vert)
         ind_by_vert[vertex_id] = vert_ind
         geom_xml.vertices.append(Vector(vert))
-        if vert_color is not None and current_game == SollumzGame.GTA:
-            geom_xml.vertex_colors.append(vert_color)
 
         return vert_ind
 

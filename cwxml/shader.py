@@ -15,8 +15,6 @@ from typing import Optional
 from enum import Enum
 
 
-current_game = SollumzGame.GTA
-
 class FileNameList(ListProperty):
     class FileName(TextProperty):
         tag_name = "Item"
@@ -64,10 +62,7 @@ class ShaderParameterDef(ElementTree, ABC):
         self.name = AttributeProperty("name")
         self.type = AttributeProperty("type", self.type)
         self.hidden = AttributeProperty("hidden", False)
-        if current_game == SollumzGame.GTA:
-            self.subtype = AttributeProperty("subtype")
-        elif current_game == SollumzGame.RDR:
-            self.index = AttributeProperty("index")
+        self.index = AttributeProperty("index")
 
 
 class ShaderParameterTextureDef(ShaderParameterDef):
@@ -76,8 +71,7 @@ class ShaderParameterTextureDef(ShaderParameterDef):
     def __init__(self):
         super().__init__()
         self.uv = AttributeProperty("uv")
-        if current_game == SollumzGame.RDR:
-            self.index = AttributeProperty("index", 0)
+        self.index = AttributeProperty("index", 0)
 
 
 class ShaderParameterFloatVectorDef(ShaderParameterDef, ABC):
@@ -248,51 +242,36 @@ class ShaderDef(ElementTree):
 
     def __init__(self):
         super().__init__()
-        if current_game == SollumzGame.RDR:
-            self.filename = TextProperty("Name")
-            self.render_bucket = 0
-            self.buffer_size = []
-            self.parameters = ShaderParameterDefsList("Params")
-            self.semantics = SemanticsList()
-            self.parameter_map = {}
-        elif current_game == SollumzGame.GTA:
-            self.filename = TextProperty("Name", "")
-            self.layouts = LayoutList()
-            self.parameters = ShaderParameterDefsList("Parameters")
-            self.render_bucket = 0
-            self.uv_maps = {}
-            self.parameter_map = {}
-            self.parameter_ui_order = {}
+        self.filename = TextProperty("Name")
+        self.render_bucket = 0
+        self.buffer_size = []
+        self.parameters = ShaderParameterDefsList("Params")
+        self.semantics = SemanticsList()
+        self.parameter_map = {}
 
     @property
     def required_tangent(self):
-        if current_game == SollumzGame.GTA:
-            for layout in self.layouts:
-                if "Tangent" in layout.value:
-                    return True
-            return False
-        elif current_game == SollumzGame.RDR:
-            tangents = set()
-            for semantic in self.semantics.values:
-                current_semantic = None
-                count = -1
-                for this_semantic in semantic:
-                    if current_semantic is None:
-                        current_semantic = this_semantic
-                    elif current_semantic != this_semantic:
-                        current_semantic = this_semantic
-                        count = -1
-                    
-                    entry = VERT_ATTR_DTYPES[this_semantic].copy()
-                    
-                    if count == -1 and entry[0] in ("Colour", "TexCoord"):
-                        entry[0] = entry[0] + "0"
-                    elif count >= 0:
-                        entry[0] = entry[0] + str(count+1)
-                    if "Tangent" in entry[0]:
-                        tangents.add(entry[0])
-                    count += 1
-            return tangents
+        tangents = set()
+        for semantic in self.semantics.values:
+            current_semantic = None
+            count = -1
+            for this_semantic in semantic:
+                if current_semantic is None:
+                    current_semantic = this_semantic
+                elif current_semantic != this_semantic:
+                    current_semantic = this_semantic
+                    count = -1
+                
+                entry = VERT_ATTR_DTYPES[this_semantic].copy()
+                
+                if count == -1 and entry[0] in ("Colour", "TexCoord"):
+                    entry[0] = entry[0] + "0"
+                elif count >= 0:
+                    entry[0] = entry[0] + str(count+1)
+                if "Tangent" in entry[0]:
+                    tangents.add(entry[0])
+                count += 1
+        return tangents
             
 
     @property
@@ -413,30 +392,7 @@ class ShaderManager:
 
     @staticmethod
     def load_shaders():
-        global current_game
-        tree = ET.parse(ShaderManager.shaderxml)
         rdrtree = ET.parse(ShaderManager.rdr_shaderxml)
-
-        current_game = SollumzGame.GTA
-        for node in tree.getroot():
-            base_name = node.find("Name").text
-            for filename_elem in node.findall("./FileName//*"):
-                filename = filename_elem.text
-
-                if filename is None:
-                    continue
-
-                filename_hash = jenkhash.Generate(filename)
-                render_bucket = int(filename_elem.attrib["bucket"])
-
-                shader = ShaderDef.from_xml(node)
-                shader.filename = filename
-                shader.render_bucket = render_bucket
-                ShaderManager._shaders[filename] = shader
-                ShaderManager._shaders_by_hash[filename_hash] = shader
-                ShaderManager._shaders_base_names[shader] = base_name
-        
-        current_game = SollumzGame.RDR
         for node in rdrtree.getroot():
             base_name = node.find("Name").text
 
@@ -459,16 +415,11 @@ class ShaderManager:
             ShaderManager._rdr_shaders_by_hash[filename_hash] = shader
             ShaderManager._rdr_shaders_base_names[shader] = base_name
         print("\Loaded total RDR shaders:", len(ShaderManager._rdr_shaders))
-        print("\Loaded total GTA shaders:", len(ShaderManager._shaders))
 
 
     @staticmethod
     def find_shader(filename: str, game: SollumzGame = SollumzGame.GTA) -> Optional[ShaderDef]:
-        shader = None
-        if game == SollumzGame.GTA:
-            shader = ShaderManager._shaders.get(filename, None)
-        elif game == SollumzGame.RDR:
-            shader = ShaderManager._rdr_shaders.get(filename, None)
+        shader = ShaderManager._rdr_shaders.get(filename, None)
         if shader is None and filename.startswith("hash_"):
             filename_hash = int(filename[5:], 16)
             shader = ShaderManager._shaders_by_hash.get(filename_hash, None)
@@ -479,10 +430,7 @@ class ShaderManager:
         shader = ShaderManager.find_shader(filename, game)
         if shader is None:
             return None
-        if game == SollumzGame.GTA:
-            return ShaderManager._shaders_base_names[shader]
-        elif game == SollumzGame.RDR:
-            return ShaderManager._rdr_shaders_base_names[shader]
+        return ShaderManager._rdr_shaders_base_names[shader]
 
 
 ShaderManager.load_shaders()

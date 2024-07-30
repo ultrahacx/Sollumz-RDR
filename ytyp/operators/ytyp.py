@@ -308,10 +308,7 @@ class SOLLUMZ_OT_import_ytyp(SOLLUMZ_OT_base, bpy.types.Operator, ImportHelper):
 
     def run(self, context):
         try:
-            game = SollumzGame.GTA
-            if ".rsc" in self.filepath:
-                game = SollumzGame.RDR
-            ytyp_to_obj(YTYP.from_xml_file(self.filepath), game)
+            ytyp_to_obj(YTYP.from_xml_file(self.filepath))
             self.message(f"Successfully imported: {self.filepath}")
             return True
         except:
@@ -348,16 +345,9 @@ class SOLLUMZ_OT_export_ytyp(SOLLUMZ_OT_base, bpy.types.Operator):
     def poll(cls, context):
         num_ytyps = len(context.scene.ytyps)
         return num_ytyps > 0 and context.scene.ytyp_index < num_ytyps
-
-    def get_file_extension(self):
-        selected_ytyp = bpy.context.scene.ytyps[bpy.context.scene.ytyp_index]
-        if selected_ytyp.game == SollumzGame.RDR:
-            return ".ytyp.rsc.xml"
-        else:
-            return ".ytyp.xml"
         
     def get_filepath(self, name):
-        return os.path.join(self.directory, name + self.get_file_extension())
+        return os.path.join(self.directory, name + ".ytyp.rsc.xml")
 
     def run(self, context):
         try:

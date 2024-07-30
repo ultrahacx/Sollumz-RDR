@@ -11,7 +11,6 @@ from .properties.ytyp import CMapTypesProperties, ArchetypeProperties, SpecialAt
 from .properties.extensions import ExtensionProperties, ExtensionType, ExtensionsContainer
 from ..ydr.light_flashiness import Flashiness
 
-current_game = SollumzGame.GTA
 
 
 def create_mlo_entity_set(entity_set_xml: ytypxml.EntitySet, archetype: ArchetypeProperties):
@@ -345,11 +344,9 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
     archetype.bs_radius = archetype_xml.bs_radius
     archetype.asset_name = archetype_xml.asset_name
     archetype.asset_type = get_asset_type_enum(archetype_xml.asset_type)
-
-    if current_game == SollumzGame.RDR:
-        archetype.load_flags = int(archetype_xml.load_flags, 0)
-        archetype.guid = int(archetype_xml.guid, 0)
-        archetype.unknown_1 = get_map_entity_type_enum(archetype_xml.unknown_1)
+    archetype.load_flags = int(archetype_xml.load_flags, 0)
+    archetype.guid = int(archetype_xml.guid, 0)
+    archetype.unknown_1 = get_map_entity_type_enum(archetype_xml.unknown_1)
 
     find_and_set_archetype_asset(archetype)
 
@@ -367,15 +364,11 @@ def create_archetype(archetype_xml: ytypxml.BaseArchetype, ytyp: CMapTypesProper
         create_extension(extension_xml, archetype)
 
 
-def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes, game: SollumzGame):
+def ytyp_to_obj(ytyp_xml: ytypxml.CMapTypes):
     """Create a ytyp data-block in the Blender scene given a ytyp cwxml."""
-
-    global current_game
-    current_game = game
 
     ytyp: CMapTypesProperties = bpy.context.scene.ytyps.add()
     ytyp.name = ytyp_xml.name
-    ytyp.game = current_game
 
     bpy.context.scene.ytyp_index = len(bpy.context.scene.ytyps) - 1
 

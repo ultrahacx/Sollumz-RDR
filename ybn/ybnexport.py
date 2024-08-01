@@ -187,10 +187,12 @@ def init_bound_child_xml(bound_xml: T_BoundChild, obj: bpy.types.Object, auto_ca
         bound_xml.composite_transform = composite_transform
     else:
         delattr(bound_xml, "composite_transform")
+
     if obj.type == "MESH":
         bbmin, bbmax = get_bound_extents(obj)
     elif obj.type == "EMPTY":
-        bbmin, bbmax = get_bvh_extents(obj, bound_xml.composite_transform)
+        transform = bound_xml.composite_transform or Matrix.Identity(4)
+        bbmin, bbmax = get_bvh_extents(obj, transform)
     else:
         return bound_xml
 
@@ -398,7 +400,8 @@ def create_bound_xml_poly_shape(obj: bpy.types.Object, geom_xml: BoundGeometryBV
 
 def get_bound_poly_transforms_to_apply(obj: bpy.types.Object, composite_transform: Matrix):
     """Get the transforms to apply directly to BoundGeometry vertices."""
-    composite_transform = composite_transform.transposed()
+    transform = composite_transform or Matrix.Identity(4)
+    composite_transform = transform.transposed()
     parent_inverse = get_parent_inverse(obj)
 
     # Apply any transforms not covered in composite_transform
@@ -707,7 +710,8 @@ def get_composite_extents(composite_xml: BoundComposite):
     corner_vecs: list[Vector] = []
 
     for child in composite_xml.children:
-        transform = child.composite_transform.transposed()
+        transform = child.composite_transform or Matrix.Identity(4)
+        transform = transform.transposed()
         child_corners = get_corners_from_extents(child.box_min, child.box_max)
         # Get AABB with transforms applied
         corner_vecs.extend([transform @ corner for corner in child_corners])

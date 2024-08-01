@@ -195,10 +195,9 @@ def get_flag_presets_path() -> str:
     from ..sollumz_preferences import get_config_directory_path
     return os.path.join(get_config_directory_path(), "flag_presets.xml")
 
-
+_default_flag_presets_path = os.path.join(os.path.dirname(__file__), "flag_presets.xml")
 def get_defaut_flag_presets_path() -> str:
-    package_name = __name__.split(".")[0]
-    return f"{bpy.utils.user_resource('SCRIPTS', path='addons')}\\{package_name}\\ybn\\flag_presets.xml"
+    return _default_flag_presets_path
 
 
 flag_presets = FlagPresetsFile()

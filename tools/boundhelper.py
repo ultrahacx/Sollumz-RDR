@@ -209,7 +209,6 @@ def convert_obj_to_bvh(obj: bpy.types.Object, apply_default_flags: bool, sollum_
 
 def apply_default_flag_preset(obj: bpy.types.Object, sollum_game_type: SollumzGame):
     load_flag_presets()
-    print(sollum_game_type)
     if sollum_game_type == SollumzGame.RDR:
         preset = flag_presets.presets[1]
         flags_class = RDRBoundFlags

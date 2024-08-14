@@ -212,11 +212,21 @@ class VertexBufferBuilder:
             weights_arr, weights_arr2 = np.hsplit(normalized_weights, 2)
             ind_arr, ind_arr2 = np.hsplit(ind_arr, 2)
 
-        weights_arr = self._convert_to_int_range(weights_arr)
-        weights_arr = self._renormalize_converted_weights(weights_arr)
-        
-        weights_arr2 = self._convert_to_int_range(weights_arr2)
-        weights_arr2 = self._renormalize_converted_weights(weights_arr2)
+        if current_game == SollumzGame.GTA:
+            weights_arr = self._convert_to_int_range(weights_arr)
+            weights_arr = self._renormalize_converted_weights(weights_arr)
+        elif current_game == SollumzGame.RDR:
+            weights_arr = self._convert_to_int_range(weights_arr)
+            weights_arr2 = self._convert_to_int_range(weights_arr2)
+            
+            # Combine both weight arrays into one so renomalization can be done for all 8 weights in a vertex
+            weights_arr_whole = np.concatenate((weights_arr, weights_arr2), axis=1)
+            
+            # Renormalize all 8 weights so they all sum 255
+            weights_arr_whole = self._renormalize_converted_weights(weights_arr_whole)
+            
+            # Split the weights back to their respective arrays
+            weights_arr, weights_arr2 = np.hsplit(weights_arr_whole, 2)
 
         # Return on loop domain
         if current_game == SollumzGame.GTA:

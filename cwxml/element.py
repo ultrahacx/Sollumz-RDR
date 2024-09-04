@@ -8,7 +8,7 @@ from numpy import float32
 
 
 def remove_elements_with_no_attributes(elem):
-    for child in elem:
+    for child in list(elem):
         remove_elements_with_no_attributes(child)
         
         if child.text or len(child.attrib) > 0:

@@ -224,6 +224,12 @@ class ExtensionExpression(Extension):
         self.intialize_on_collision = ValueProperty(
             "initialiseOnCollision", False)
 
+class ExtensionScriptEntityId(Extension):
+    type = "CExtensionDefScriptEntityId"
+
+    def __init__(self):
+        super().__init__()
+        self.scipt_id = TextProperty("Id")
 
 class ExtensionLightShaft(Extension):
     type = "CExtensionDefLightShaft"
@@ -267,7 +273,6 @@ class ExtensionDoor(Extension):
         self.limit_angle = ValueProperty("limitAngle", False)
         self.door_target_ratio = ValueProperty("doorTargetRatio")
         self.audio_hash = TextProperty("audioHash")
-
 
 class ExtensionSpawnPoint(Extension):
     type = "CExtensionDefSpawnPoint"
@@ -375,6 +380,8 @@ class ExtensionsList(ListProperty):
             return ExtensionWindDisturbance
         elif ext_type == ExtensionProcObject.type:
             return ExtensionProcObject
+        elif ext_type == ExtensionScriptEntityId.type:
+            return ExtensionScriptEntityId
 
         return None
 

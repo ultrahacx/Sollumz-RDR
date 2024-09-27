@@ -19,6 +19,7 @@ class ExtensionType(str, Enum):
     WIND_DISTURBANCE = "CExtensionDefWindDisturbance"
     PROC_OBJECT = "CExtensionDefProcObject"
     EXPRESSION = "CExtensionDefExpression"
+    SCRIPT_ID = "CExtensionDefScriptEntityId"
 
 
 ExtensionTypeEnumItems = (
@@ -35,6 +36,7 @@ ExtensionTypeEnumItems = (
     (ExtensionType.WIND_DISTURBANCE, "Wind Disturbance", "", 10),
     (ExtensionType.PROC_OBJECT, "Procedural Object", "", 11),
     (ExtensionType.EXPRESSION, "Expression", "", 12),
+    (ExtensionType.SCRIPT_ID, "Script ID", "", 13),
 )
 
 
@@ -85,7 +87,6 @@ class DoorExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
     door_target_ratio: bpy.props.FloatProperty(
         name="Door Target Ratio", min=0)
     audio_hash: bpy.props.StringProperty(name="Audio Hash")
-
 
 class ParticleExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
     offset_rotation: bpy.props.FloatVectorProperty(
@@ -146,7 +147,9 @@ class ExpressionExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
         name="Creature Metadata Name")
     initialize_on_collision: bpy.props.BoolProperty(
         name="Initialize on Collision")
-
+    
+class ScriptIDExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+    scipt_id: bpy.props.StringProperty(name="Script ID")
 
 class LightShaftExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
     density_type: bpy.props.EnumProperty(items=LightShaftDensityTypeEnumItems, name="Density Type")
@@ -298,6 +301,8 @@ class ExtensionProperties(bpy.types.PropertyGroup):
             return self.explosion_extension_properties
         elif self.extension_type == ExtensionType.EXPRESSION:
             return self.expression_extension_properties
+        elif self.extension_type == ExtensionType.SCRIPT_ID:
+            return self.scriptid_extension_properties
         elif self.extension_type == ExtensionType.LADDER:
             return self.ladder_extension_properties
         elif self.extension_type == ExtensionType.LIGHT_SHAFT:
@@ -330,6 +335,8 @@ class ExtensionProperties(bpy.types.PropertyGroup):
         type=BuoyancyExtensionProperties)
     expression_extension_properties: bpy.props.PointerProperty(
         type=ExpressionExtensionProperties)
+    scriptid_extension_properties: bpy.props.PointerProperty(
+        type=ScriptIDExtensionProperties)
     light_shaft_extension_properties: bpy.props.PointerProperty(
         type=LightShaftExtensionProperties)
     spawn_point_extension_properties: bpy.props.PointerProperty(

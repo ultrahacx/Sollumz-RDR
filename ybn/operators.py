@@ -356,6 +356,8 @@ class SOLLUMZ_OT_delete_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         "Stair plane",
         "Stair mesh",
         "Deep surface",
+        "Horse Avoidance",
+        "River Type",
     ]
 
     def run(self, context):
@@ -430,6 +432,8 @@ class SOLLUMZ_OT_save_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
         flag_preset = FlagPreset()
         flag_preset.name = self.name
 
+        flag_preset.game = obj.sollum_game_type
+
         for prop in dir(obj.composite_flags1):
             value = getattr(obj.composite_flags1, prop)
             if value is True:
@@ -472,11 +476,13 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
                 preset = flag_presets.presets[index]
 
                 if obj.sollum_game_type == SollumzGame.RDR:
-                    preset = flag_presets.presets[1]
+                    if not preset or preset.game != obj.sollum_game_type:
+                        preset = flag_presets.presets[1]
                     flags_class = RDRBoundFlags
                     type_flags, include_flags = obj.type_flags, obj.include_flags
                 else:
-                    preset = flag_presets.presets[0]
+                    if not preset or preset.game != obj.sollum_game_type:
+                        preset = flag_presets.presets[0]
                     flags_class = BoundFlags
                     type_flags, include_flags = obj.composite_flags1, obj.composite_flags2
 
@@ -485,7 +491,6 @@ class SOLLUMZ_OT_load_flag_preset(SOLLUMZ_OT_base, bpy.types.Operator):
                     flag_in_preset2 = flag_name in preset.flags2
 
                     type_flags[flag_name] = flag_in_preset1
-                    include_flags[flag_name] = flag_in_preset2
                     include_flags[flag_name] = flag_in_preset2
 
                 tag_redraw(context)
@@ -514,9 +519,14 @@ class SOLLUMZ_OT_clear_col_flags(SOLLUMZ_OT_base, bpy.types.Operator):
             return False
 
         if aobj.sollum_type in BOUND_TYPES:
-            for flag_name in BoundFlags.__annotations__.keys():
-                aobj.composite_flags1[flag_name] = False
-                aobj.composite_flags2[flag_name] = False
+            if aobj.sollum_game_type == SollumzGame.RDR:
+                for flag_name in RDRBoundFlags.__annotations__.keys():
+                    aobj.type_flags[flag_name] = False
+                    aobj.include_flags[flag_name] = False
+            else:
+                for flag_name in BoundFlags.__annotations__.keys():
+                    aobj.composite_flags1[flag_name] = False
+                    aobj.composite_flags2[flag_name] = False
 
             tag_redraw(context)
 

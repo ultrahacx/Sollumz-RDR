@@ -1,6 +1,7 @@
 from typing import Iterable
 import bpy
 from mathutils import Euler, Vector, Quaternion, Matrix
+from math import cos, sin
 
 from ..cwxml import ytyp as ytypxml, ymap as ymapxml
 from ..sollumz_properties import ArchetypeType, AssetType, EntityLodLevel, EntityPriorityLevel, SollumzGame, MapEntityType
@@ -92,6 +93,8 @@ def create_entity_xml(entity: MloEntityProperties) -> ymapxml.Entity:
     """Create xml mlo entity from an entity data-block."""
 
     entity_xml = ymapxml.Entity()
+    if current_game == SollumzGame.RDR:
+        entity_xml = ymapxml.EntityRDR()
     entity_obj = entity.linked_object
     if entity_obj:
         set_entity_xml_transforms_from_object(entity_obj, entity_xml)
@@ -106,6 +109,9 @@ def create_entity_xml(entity: MloEntityProperties) -> ymapxml.Entity:
     entity_xml.ambient_occlusion_multiplier = entity.ambient_occlusion_multiplier
     entity_xml.artificial_ambient_occlusion = entity.artificial_ambient_occlusion
     entity_xml.tint_value = entity.tint_value
+    if isinstance(entity_xml, ymapxml.EntityRDR):
+        entity_xml.blend_age_layer = entity.blend_age_layer
+        entity_xml.blend_age_dirt = entity.blend_age_dirt
 
     lod_level = next(name for name, value in vars(
         EntityLodLevel).items() if value == (entity.lod_level))
@@ -188,6 +194,12 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
 
     ignored_props = getattr(extension_properties.__class__, "ignored_in_import_export", None) # see LightShaftExtensionProperties
 
+    #if type(extension_xml) == ymapxml.ExtensionStairs:
+        #extension_properties.bottom += extension_properties.offset_position
+        #extension_properties.top += extension_properties.offset_position
+        #extension_properties.bound_min += extension_properties.offset_position
+        #extension_properties.bound_max += extension_properties.offset_position
+
     for prop_name in extension_properties.__class__.__annotations__:
         if ignored_props is not None and prop_name in ignored_props:
             continue
@@ -218,6 +230,20 @@ def set_extension_xml_props(extension: ExtensionProperties, extension_xml: ymapx
         elif prop_name == "flashiness":
             # convert enum back to int
             prop_value = Flashiness[prop_value].value
+        
+        elif prop_name == "steps":
+            prop_value = ymapxml.StepInstanceList()
+            for step in extension_properties.steps:
+                step_properties = step.step_properties
+                step_xml = ymapxml.StepInstance()
+                for prop_name_step in vars(step_xml).keys():
+                    if hasattr(step_properties, prop_name_step):
+                        setattr(step_xml, prop_name_step, getattr(step_properties, prop_name_step))
+                step_xml.position = extension_properties.offset_position
+                step_xml.forward = Vector((round(cos(step_properties.rotation), 6), round(sin(step_properties.rotation), 6), 0))
+                step_xml.right = Vector((-step_xml.forward.y, step_xml.forward.x, 0))
+                prop_value.value.append(step_xml)
+                
 
         setattr(extension_xml, prop_name, prop_value)
 

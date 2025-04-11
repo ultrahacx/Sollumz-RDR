@@ -91,6 +91,7 @@ def test_obj_as_vertices_only():
     "../ytyp/gizmos/models/SpawnPoint.obj",
     "../ytyp/gizmos/models/SpawnPointOverride.obj",
     "../ytyp/gizmos/models/WindDisturbance.obj",
+    "../ytyp/gizmos/models/Stair.obj",
 ))
 def test_obj_read_sollumz_builtin_asset(obj_relative_file_path: str):
     obj_path = Path(__file__).parent.joinpath(obj_relative_file_path)

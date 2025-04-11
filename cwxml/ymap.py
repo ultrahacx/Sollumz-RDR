@@ -1,6 +1,7 @@
 from abc import ABC as AbstractClass, abstractmethod
 from typing import Union, Type
 from xml.etree import ElementTree as ET
+from ..sollumz_properties import SollumzGame
 from .element import (
     AttributeProperty,
     ElementProperty,
@@ -18,6 +19,7 @@ from .element import (
     Vector4Property,
 )
 
+current_game = SollumzGame.GTA
 
 class YMAP:
 
@@ -25,6 +27,11 @@ class YMAP:
 
     @staticmethod
     def from_xml_file(filepath):
+        global current_game
+        if ".rsc" in filepath:
+            current_game = SollumzGame.RDR
+        else:
+            current_game = SollumzGame.GTA
         return CMapData.from_xml_file(filepath)
 
     @staticmethod
@@ -344,6 +351,51 @@ class ExtensionProcObject(Extension):
         self.max_z_offset = ValueProperty("maxZOffset")
         self.object_hash = ValueProperty("objectHash")
         self.flags = ValueProperty("flags")
+    
+
+class StepInstance(ElementTree):
+    tag_name = "Item"
+
+    def __init__(self):
+        super().__init__()
+        self.position = VectorProperty("position")
+        self.width = ValueProperty("width")
+        self.depth = ValueProperty("depth")
+        self.height = ValueProperty("height")
+        self.forward = VectorProperty("forward")
+        self.right = VectorProperty("right")
+
+
+class StepInstanceList(ListProperty):
+    list_type = StepInstance
+    tag_name = "steps"
+    item_type = "qbgDfAA_0xA15F529D"
+
+    def __init__(self, tag_name=None, value=None):
+        super().__init__(tag_name, value)
+        self.item_type = AttributeProperty("itemType", self.item_type)
+
+    @staticmethod
+    def from_xml(element: ET.Element):
+        new = StepInstanceList()
+        for child in element.iter():
+            if len(child.attrib) <= 0:
+                step = StepInstance
+                new.value.append(step.from_xml(child))
+                
+        return new
+
+
+class ExtensionStairs(Extension):
+    type = "CExtensionDefStairs"
+
+    def __init__(self):
+        super().__init__()
+        self.bottom = VectorProperty("bottom")
+        self.top = VectorProperty("top")
+        self.bound_min = VectorProperty("boundMin")
+        self.bound_max = VectorProperty("boundMax")
+        self.steps = StepInstanceList()
 
 
 class ExtensionsList(ListProperty):
@@ -382,6 +434,8 @@ class ExtensionsList(ListProperty):
             return ExtensionProcObject
         elif ext_type == ExtensionScriptEntityId.type:
             return ExtensionScriptEntityId
+        elif ext_type == ExtensionStairs.type:
+            return ExtensionStairs
 
         return None
 
@@ -431,9 +485,21 @@ class Entity(ElementTree):
         self.tint_value = ValueProperty("tintValue", 0)
 
 
+class EntityRDR(Entity):
+    def __init__(self):
+        super().__init__()
+        self.blend_age_layer = ValueProperty("blendAgeLayer", 0)
+        self.blend_age_dirt = ValueProperty("blendAgeDirt", 0)
+
+
 class EntityList(ListPropertyRequired):
     list_type = Entity
     tag_name = "entities"
+
+    def __init__(self, current_game):
+        if current_game == SollumzGame.RDR:
+            self.list_type = Entity
+        super().__init__()
 
 
 class ContainerLodsList(ElementTree):
@@ -636,7 +702,7 @@ class CMapData(ElementTree, AbstractClass):
         self.streaming_extents_max = VectorProperty("streamingExtentsMax")
         self.entities_extents_min = VectorProperty("entitiesExtentsMin")
         self.entities_extents_max = VectorProperty("entitiesExtentsMax")
-        self.entities = EntityList()
+        self.entities = EntityList(current_game)
         self.container_lods = ContainerLodsList()
         self.box_occluders = BoxOccludersList()
         self.occlude_models = OccludeModelsList()

@@ -3,6 +3,9 @@ from typing import Union
 from enum import Enum
 from ...tools.utils import get_list_item
 from ...ydr.light_flashiness import Flashiness, LightFlashinessEnumItems
+from mathutils import Vector
+import math
+from ..utils import get_selected_extension
 
 
 class ExtensionType(str, Enum):
@@ -20,6 +23,7 @@ class ExtensionType(str, Enum):
     PROC_OBJECT = "CExtensionDefProcObject"
     EXPRESSION = "CExtensionDefExpression"
     SCRIPT_ID = "CExtensionDefScriptEntityId"
+    Stairs = "CExtensionDefStairs"
 
 
 ExtensionTypeEnumItems = (
@@ -37,6 +41,7 @@ ExtensionTypeEnumItems = (
     (ExtensionType.PROC_OBJECT, "Procedural Object", "", 11),
     (ExtensionType.EXPRESSION, "Expression", "", 12),
     (ExtensionType.SCRIPT_ID, "Script ID", "", 13),
+    (ExtensionType.Stairs, "Stairs", "", 14),
 )
 
 
@@ -285,6 +290,218 @@ class ProcObjectExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProper
     flags: bpy.props.IntProperty(name="Flags", subtype="UNSIGNED")
 
 
+def set_float_vector_property(self, value, name, relativ_object = None):
+    if not relativ_object:
+        relativ_object = self
+    if relativ_object.show_relative:
+        self[name] = value
+    else:
+        self[name] = Vector(value) - relativ_object.offset_position
+
+
+def get_float_vector_property(self, name, relativ_object = None):
+    if not relativ_object:
+        relativ_object = self
+    if relativ_object.show_relative:
+        return self[name]
+    else:
+        return Vector(self[name]) + relativ_object.offset_position
+    
+
+class StepsExtensionProperties(bpy.types.PropertyGroup):
+    position: bpy.props.FloatVectorProperty(name="Position", subtype="TRANSLATION")
+    position_ui: bpy.props.FloatVectorProperty(name="Position",
+                                             subtype="TRANSLATION",
+                                             get=lambda self: get_float_vector_property(self, "position", get_selected_extension(bpy.context).stairs_extension_properties),
+                                             set=lambda self, value: set_float_vector_property(self, value, "position", get_selected_extension(bpy.context).stairs_extension_properties))
+    width: bpy.props.FloatProperty(name="Width")
+    depth: bpy.props.FloatProperty(name="Depth")
+    height: bpy.props.FloatProperty(name="Height")
+    rotation: bpy.props.FloatProperty(name="Rotation", subtype="ANGLE")
+
+    def mirror_step(self):
+        if(self.rotation > math.pi):
+            self.rotation -= math.pi
+        else:
+            self.rotation += math.pi
+
+    def update_step(self, mesh, edges):
+        stair_porperties = get_selected_extension(bpy.context).stairs_extension_properties
+        
+        selected_vertices = [v.co for v in mesh.vertices if v.select]
+        self.position = sum(selected_vertices, Vector()) / len(selected_vertices) - stair_porperties.offset_position
+
+
+        vertices = [v.co for v in mesh.vertices]
+        #t = Vector()
+        #t.an
+        verts = []
+
+        relevant_edges = set()
+        for edge in edges:
+            vec = vertices[edge[1]] - vertices[edge[0]]
+            relevant_edges.add(vec.to_tuple())
+            verts += list(vertices[edge[1]], )
+        
+        if len(relevant_edges) != 3:
+            print("not exactly 3 unique edges")
+            print(relevant_edges)
+            return
+        
+        relevant_edges = list(relevant_edges)
+        edges_length = [Vector(e).length for e in relevant_edges]
+        edges_vector = [Vector(e) for e in relevant_edges]
+        width = max(max(edges_length[0], edges_length[1]), edges_length[2])
+        height = min(min(edges_length[0], edges_length[1]), edges_length[2])
+        angle_vector = edges_vector[edges_length.index(width)]
+        edges_length.remove(width)
+        edges_length.remove(height)
+        depth = edges_length[0]
+
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.rotation = -math.atan2(angle_vector.x, angle_vector.y)
+
+
+class StepsExtensionListProperties(bpy.types.PropertyGroup):
+    step_properties: bpy.props.PointerProperty(
+        type=StepsExtensionProperties)
+    name: bpy.props.StringProperty(name="Name", default="Step")
+
+
+class StairsExtensionProperties(bpy.types.PropertyGroup, BaseExtensionProperties):
+    show_relative: bpy.props.BoolProperty(name="Show Relative", default=False)
+    bottom: bpy.props.FloatVectorProperty(name="Bottom", subtype="TRANSLATION")
+    bottom_ui: bpy.props.FloatVectorProperty(name="Bottom",
+                                             subtype="TRANSLATION",
+                                             get=lambda self: get_float_vector_property(self, "bottom"),
+                                             set=lambda self, value: set_float_vector_property(self, value, "bottom"))
+    top: bpy.props.FloatVectorProperty(name="Top", subtype="TRANSLATION")
+    top_ui: bpy.props.FloatVectorProperty(name="Top",
+                                          subtype="TRANSLATION",
+                                          get=lambda self: get_float_vector_property(self, "top"),
+                                          set=lambda self, value: set_float_vector_property(self, value, "top"))
+    bound_min: bpy.props.FloatVectorProperty(name="Bound Min", subtype="TRANSLATION")
+    bound_min_ui: bpy.props.FloatVectorProperty(name="Bound Min",
+                                                subtype="TRANSLATION",
+                                                get=lambda self: get_float_vector_property(self, "bound_min"),
+                                                set=lambda self, value: set_float_vector_property(self, value, "bound_min"))
+    bound_max: bpy.props.FloatVectorProperty(name="Bound Max", subtype="TRANSLATION")
+    bound_max_ui: bpy.props.FloatVectorProperty(name="Bound Max",
+                                                subtype="TRANSLATION",
+                                                get=lambda self: get_float_vector_property(self, "bound_max"),
+                                                set=lambda self, value: set_float_vector_property(self, value, "bound_max"))
+    steps: bpy.props.CollectionProperty(
+        type=StepsExtensionListProperties, name="Steps")
+    steps_index: bpy.props.IntProperty(name="Step")
+
+    @property
+    def selected_step(self) -> Union[StepsExtensionListProperties, None]:
+        return get_list_item(self.steps, self.steps_index)
+
+    def new_step(self) -> StepsExtensionProperties:
+        item: StepsExtensionProperties = self.steps.add()
+        item.step_properties.position = (0.0, 0.0, 0.0)
+        return item
+
+    def delete_selected_stair(self):
+        if not self.selected_step:
+            return
+
+        self.steps.remove(self.steps_index)
+        self.steps_index = max(self.steps_index - 1, 0)
+
+    def flip_forward_vector(self):
+        if self.step_properties.rotation > math.pi:
+            self.step_properties.rotation -= math.pi
+        else:
+            self.step_properties.rotation += math.pi
+
+    def update_bound_box(self):
+        if len(self.steps) <= 0:
+            return
+
+        bound_min = bound_max = self.steps[0].step_properties.position
+        step_min = step_max = self.steps[0].step_properties
+
+        rotate = lambda x, y, angle: (x * math.sin(angle) - y * math.cos(angle), x * math.cos(angle) + y * math.sin(angle))
+        for step in self.steps:
+            prop = step.step_properties
+            step_min = step_min if step_min.position[2] <= prop.position[2] else prop
+            step_max = step_max if step_max.position[2] >= prop.position[2] else prop
+
+            half_width = prop.width / 2
+            half_depth = prop.depth / 2
+            corners = [
+                rotate(-half_width, -half_depth, prop.rotation),
+                rotate(half_width, -half_depth, prop.rotation),
+                rotate(half_width, half_depth, prop.rotation),
+                rotate(-half_width, half_depth, prop.rotation)]
+
+            for corner in corners:
+                bound_min = (min(bound_min[0], corner[0] + prop.position[0]), min(bound_min[1], corner[1] + prop.position[1]), min(bound_min[2], prop.position[2] - prop.height/2))
+                bound_max = (max(bound_max[0], corner[0] + prop.position[0]), max(bound_max[1], corner[1] + prop.position[1]), step_max.position[2])
+        self.bound_min = bound_min
+        self.bound_max = bound_max
+
+        self.top = step_max.position
+        self.bottom = (step_min.position[0], step_min.position[1], bound_min[2])
+
+    def generate_steps(self, selected_vertices):
+        vertices = dict()
+        for vertx in selected_vertices:
+            if vertx.z in vertices.keys():
+                vertices[vertx.z].append(vertx)
+            else:
+                vertices[vertx.z] = [vertx]
+
+        first_step = None
+        heights = []
+        vertices = sorted(list(vertices.values()), key=lambda v: v[0].z, reverse = False)
+        for i, vertx in enumerate(vertices):
+            if len(vertx) < 4:
+                print("Not 4 vertecies. Skipping...")
+                continue
+            new = self.new_step()
+            new.step_properties.position = sum(vertx, Vector())/len(vertx) - self.offset_position
+            if i != 0:
+                height = vertx[0].z - vertices[i-1][0].z
+                new.step_properties.height = height
+                new.step_properties.position.z -= height/2
+                heights.append(height)
+            else:
+                first_step = new
+            edges = []
+            for j in range(len(vertx) - 1):
+                edges.append(vertx[j] - vertx[j + 1])
+            edges.append(vertx[0] - vertx[-1])
+
+            edges.sort(key=lambda e: e.length, reverse=True)
+            print(edges)
+            width = Vector(edges[0])
+            new.step_properties.width = width.length
+            new.step_properties.depth = edges[-2].length
+            angle1 = -math.atan2(width.x, width.y)
+            angle2 = -math.atan2(edges[1].x, edges[1].y)
+            print(angle1, angle2)
+            new.step_properties.rotation = (angle1 + angle2)/2
+        height = sum(heights)/len(heights)
+        first_step.step_properties.position.z -= height/2
+        first_step.step_properties.height = height
+
+        #group by z toleranz 0.025
+        #find corner verts
+        #   
+        #find unique edges
+        #   controll inverted
+
+        
+
+            
+            
+
+
 class ExtensionProperties(bpy.types.PropertyGroup):
     def get_properties(self) -> BaseExtensionProperties:
         if self.extension_type == ExtensionType.DOOR:
@@ -315,6 +532,8 @@ class ExtensionProperties(bpy.types.PropertyGroup):
             return self.spawn_point_override_properties
         elif self.extension_type == ExtensionType.WIND_DISTURBANCE:
             return self.wind_disturbance_properties
+        elif self.extension_type == ExtensionType.Stairs:
+            return self.stairs_extension_properties
 
     extension_type: bpy.props.EnumProperty(name="Type", items=ExtensionTypeEnumItems)
     name: bpy.props.StringProperty(name="Name", default="Extension")
@@ -347,6 +566,8 @@ class ExtensionProperties(bpy.types.PropertyGroup):
         type=WindDisturbanceExtensionProperties)
     proc_object_extension_properties: bpy.props.PointerProperty(
         type=ProcObjectExtensionProperties)
+    stairs_extension_properties: bpy.props.PointerProperty(
+        type=StairsExtensionProperties)
 
 
 class ExtensionsContainer:
@@ -370,6 +591,11 @@ class ExtensionsContainer:
 
         ladder_props = item.ladder_extension_properties
         ladder_props.bottom = 0.0, 0.0, -2.5
+
+        stair_props = item.stairs_extension_properties
+        for name, value in stair_props.__class__.__annotations__.items():
+            if value.function == bpy.props.FloatVectorProperty:
+                setattr(stair_props, name, (0.0, 0.0, 0.0))
 
         return item
 

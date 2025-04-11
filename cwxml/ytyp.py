@@ -61,7 +61,7 @@ class BaseArchetype(ElementTree):
         self.extensions = ExtensionsList()
         if current_game == SollumzGame.RDR:
             self.guid = ValueProperty("guid")
-            self.unknown_1 = TextProperty("iypiqkia_0x07d164a8")
+            self.unknown_1 = TextProperty("zqNiUDA_0x07D164A8")
 
 class TimeArchetype(BaseArchetype):
     def __init__(self):
@@ -260,7 +260,7 @@ class EntitySet(ElementTree):
         super().__init__()
         self.name = TextProperty("name")
         self.locations = LocationsBuffer()
-        self.entities = EntityList()
+        self.entities = EntityList(current_game)
 
 
 class EntitySetsList(ListProperty):
@@ -298,7 +298,7 @@ class MloArchetype(BaseArchetype):
         super().__init__()
         self.type = AttributeProperty("type", "CMloArchetypeDef")
         self.mlo_flags = ValueProperty("mloFlags")
-        self.entities = EntityList()
+        self.entities = EntityList(current_game)
         self.rooms = RoomsList()
         self.portals = PortalsList()
         self.entity_sets = EntitySetsList()

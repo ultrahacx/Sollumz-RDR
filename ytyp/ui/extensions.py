@@ -1,7 +1,7 @@
 import bpy
 from ...tabbed_panels import TabPanel
 from ...sollumz_ui import BasicListHelper, draw_list_with_add_remove
-from ..properties.extensions import ExtensionsContainer, ExtensionType
+from ..properties.extensions import ExtensionsContainer, ExtensionType, ExtensionProperties
 from ..operators.extensions import (
     SOLLUMZ_OT_update_bottom_from_selected,
     SOLLUMZ_OT_update_corner_a_location,
@@ -13,6 +13,10 @@ from ..operators.extensions import (
     SOLLUMZ_OT_update_particle_effect_location,
     SOLLUMZ_OT_calculate_light_shaft_center_offset_location,
     SOLLUMZ_OT_update_light_shaft_direction,
+    SOLLUMZ_OT_update_bound_box_stair,
+    SOLLUMZ_OT_update_step_size_and_location,
+    SOLLUMZ_OT_generate_steps_from_faces,
+    SOLLUMZ_OT_mirror_step,
 )
 from ..utils import get_selected_archetype, get_selected_extension
 from .archetype import SOLLUMZ_PT_ARCHETYPE_TABS_PANEL
@@ -53,8 +57,8 @@ class ExtensionsPanelHelper:
         extensions_container = self.get_extensions_container(context)
 
         _, side_col = draw_list_with_add_remove(layout, self.ADD_OPERATOR_ID, self.DELETE_OPERATOR_ID,
-                                             self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
-                                             extensions_container, "extension_index")
+                                                self.EXTENSIONS_LIST_ID, "", extensions_container, "extensions",
+                                                extensions_container, "extension_index")
         side_col.separator()
         side_col.operator(self.DUPLICATE_OPERATOR_ID, text="", icon="DUPLICATE")
 
@@ -105,16 +109,56 @@ class ExtensionsPanelHelper:
                 elif is_light_shaft and (prop_name.startswith("flag_") or prop_name == "scale_by_sun_intensity"):
                     # skip light shaft flag props, drawn above
                     # and skip scale_by_sun_intensity because it is the same as flag_5
-                   continue
+                    continue
                 else:
                     if prop_name in {'direction_amount', 'cornerA'}:
                         layout.separator()
+                    elif prop_name == "steps":
+                        self.draw_steps(selected_extension)
+                        break
+                    elif prop_name in ["bottom", "top", "bound_min", "bound_max"]:
+                        continue
                     row = layout.row()
                     row.prop(extension_properties, prop_name)
+
+    def draw_steps(self, selected_extension: ExtensionProperties):
+        extension_properties = selected_extension.get_properties()
+            
+        layout = self.layout
+        layout.separator()
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_update_bound_box_stair.bl_idname)
+        row = layout.row()
+        row.operator(SOLLUMZ_OT_generate_steps_from_faces.bl_idname)
+        layout.separator()
+
+        draw_list_with_add_remove(layout, "sollumz.addarchetypeextensionstep", "sollumz.deletearchetypeextensionstep",
+                                  "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_STAIR_LIST", "",
+                                  extension_properties, "steps", extension_properties, "steps_index")
+        
+        if selected_extension.stairs_extension_properties:
+            if selected_extension.stairs_extension_properties.selected_step:
+                selected_step =  selected_extension.stairs_extension_properties.selected_step
+                if selected_step.step_properties:
+                    row = layout.row()
+                    row.operator(SOLLUMZ_OT_update_step_size_and_location.bl_idname)
+                    row = layout.row()
+                    row.operator(SOLLUMZ_OT_mirror_step.bl_idname)
+
+                    step = selected_step.step_properties
+                    for prop_name in step.__class__.__annotations__:
+                        if prop_name == "position":
+                            continue
+                        row = layout.row()
+                        row.prop(step, prop_name)
 
 
 class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST(BasicListHelper, bpy.types.UIList):
     bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_LIST"
+    icon = "CON_TRACKTO"
+
+class SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_STAIR_LIST(BasicListHelper, bpy.types.UIList):
+    bl_idname = "SOLLUMZ_UL_ARCHETYPE_EXTENSIONS_STAIR_LIST"
     icon = "CON_TRACKTO"
 
 

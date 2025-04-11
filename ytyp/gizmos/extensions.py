@@ -65,6 +65,7 @@ def get_extension_shapes() -> dict[ExtensionType, object]:
         (ExtensionType.SPAWN_POINT, "SpawnPoint.obj"),
         (ExtensionType.SPAWN_POINT_OVERRIDE, "SpawnPointOverride.obj"),
         (ExtensionType.WIND_DISTURBANCE, "WindDisturbance.obj"),
+        (ExtensionType.Stairs, "Stair.obj")
     ):
         _load_extension_model(ext_type, model_file_name)
     return shapes
@@ -89,6 +90,45 @@ def get_cube_shape() -> object:
         (-0.5, 0.5, -0.5), (-0.5, 0.5, 0.5),
         (0.5, -0.5, -0.5), (0.5, -0.5, 0.5),
         (0.5, 0.5, -0.5), (0.5, 0.5, 0.5),
+    ))
+
+@functools.cache
+def get_bound_box_shape(min_b, max_b) -> object:
+    """A cube as a bounding box with origin in the middle"""
+    return bpy.types.Gizmo.new_custom_shape("LINES", (
+        # bottom face
+        (min_b[0],min_b[1],min_b[2]),(min_b[0],max_b[1],min_b[2]),
+        (min_b[0],min_b[1],min_b[2]),(max_b[0],min_b[1],min_b[2]),
+        (max_b[0],min_b[1],min_b[2]),(max_b[0],max_b[1],min_b[2]),
+        (min_b[0],max_b[1],min_b[2]),(max_b[0],max_b[1],min_b[2]),
+        # top face
+        (min_b[0],min_b[1],max_b[2]),(min_b[0],max_b[1],max_b[2]),
+        (min_b[0],min_b[1],max_b[2]),(max_b[0],min_b[1],max_b[2]),
+        (max_b[0],min_b[1],max_b[2]),(max_b[0],max_b[1],max_b[2]),
+        (min_b[0],max_b[1],max_b[2]),(max_b[0],max_b[1],max_b[2]),
+        # connect top and bottom faces
+        (min_b[0],min_b[1],min_b[2]),(min_b[0],min_b[1],max_b[2]),
+        (min_b[0],max_b[1],min_b[2]),(min_b[0],max_b[1],max_b[2]),
+        (max_b[0],min_b[1],min_b[2]),(max_b[0],min_b[1],max_b[2]),
+        (max_b[0],max_b[1],min_b[2]),(max_b[0],max_b[1],max_b[2]),
+    ))
+
+@functools.cache
+def get_axis_shape() -> object:
+    """A representation off the axis on the origin"""
+    return bpy.types.Gizmo.new_custom_shape("LINES", (
+        (0, 0, -0.5), (0, 0, 0.5),
+        (0, -0.5, 0), (0, 0.5, 0),
+        (-0.5, 0, 0), (0.5, 0, 0),
+    ))
+
+@functools.cache
+def get_arrow_shape() -> object:
+    """A representation off the axis on the origin"""
+    return bpy.types.Gizmo.new_custom_shape("LINES", (
+        (0, 0, 0), (0.5, 0, 0),
+        (0.5, 0, 0), (0.4, 0.05, 0),
+        (0.5, 0, 0), (0.4, -0.05, 0),
     ))
 
 
@@ -291,6 +331,7 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
         is_active = selected_archetype == archetype and selected_extension == ext
         is_ladder = ext.extension_type == ExtensionType.LADDER
         is_light_shaft = ext.extension_type == ExtensionType.LIGHT_SHAFT
+        is_stair = ext.extension_type == ExtensionType.Stairs
 
         theme = context.preferences.themes[0]
 
@@ -338,6 +379,25 @@ class SOLLUMZ_GT_archetype_extension(bpy.types.Gizmo):
             self.draw_ladder_gizmo(context, select_id)
         elif is_light_shaft:
             self.draw_light_shaft_gizmo(context, select_id)
+        elif is_stair:
+            self.draw_custom_shape(get_bound_box_shape(tuple(ext_props.bound_min), tuple(ext_props.bound_max)), matrix=gizmo_matrix, select_id=select_id)
+            self.draw_custom_shape(get_axis_shape(), matrix=gizmo_matrix @ Matrix.Translation(ext_props.top), select_id=select_id)
+            self.draw_custom_shape(get_axis_shape(), matrix=gizmo_matrix @ Matrix.Translation(ext_props.bottom), select_id=select_id)
+            for step in ext_props.steps:
+                step_prop = step.step_properties
+                self.color = theme.view_3d.object_selected if step != ext_props.selected_step or not is_active else theme.view_3d.object_active
+                self.color_highlight = self.color
+                self.draw_custom_shape(get_cube_shape(), 
+                                       matrix=gizmo_matrix  @ Matrix.Translation(step_prop.position)
+                                                            @ Matrix.Rotation(step_prop.rotation, 4, Vector([0,0,1]))
+                                                            @ Matrix.Scale(step_prop.depth, 4, Vector([1,0,0]))
+                                                            @ Matrix.Scale(step_prop.width, 4, Vector([0,1,0]))
+                                                            @ Matrix.Scale(step_prop.height, 4, Vector([0,0,1])),
+                                       select_id=select_id)
+                self.draw_custom_shape(get_arrow_shape(), 
+                                       matrix=gizmo_matrix  @ Matrix.Translation(step_prop.position)
+                                                            @ Matrix.Rotation(step_prop.rotation, 4, Vector([0,0,1])),
+                                       select_id=select_id)
 
     def draw_ladder_gizmo(self, context, select_id):
         archetype = self.linked_archetype

@@ -1,6 +1,6 @@
 import bpy
 from ...sollumz_ui import BasicListHelper, SollumzFileSettingsPanel, draw_list_with_add_remove
-from ...sollumz_properties import ArchetypeType
+from ...sollumz_properties import ArchetypeType, SOLLUMZ_UI_NAMES
 from ...sollumz_preferences import (
     get_import_settings,
     get_export_settings,
@@ -50,6 +50,10 @@ class SOLLUMZ_PT_YTYP_LIST_PANEL(bpy.types.Panel):
         row = list_col.row()
         row.operator("sollumz.importytyp", icon="IMPORT")
         row.operator("sollumz.exportytyp", icon="EXPORT")
+        selected_ytyp = get_selected_ytyp(context)
+        if selected_ytyp:
+            row = list_col.row()
+            row.label(text=SOLLUMZ_UI_NAMES[selected_ytyp.game])
 
 
 class SOLLUMZ_PT_import_ytyp(bpy.types.Panel, SollumzFileSettingsPanel):

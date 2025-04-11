@@ -4,6 +4,42 @@ from ..properties.extensions import ExtensionsContainer
 from ..utils import get_selected_archetype, get_selected_entity, get_selected_ytyp, get_selected_extension
 from ...tools.blenderhelper import tag_redraw
 
+class SOLLUMZ_OT_add_archetype_extension_step(bpy.types.Operator):
+    """Add an step to the stair"""
+    bl_idname = "sollumz.addarchetypeextensionstep"
+    bl_options = {"UNDO"}
+    bl_label = "Add Step"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_extension(context) is not None
+
+    def execute(self, context):
+        selected_stair = get_selected_extension(context).stairs_extension_properties
+        selected_stair.new_step()
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_PROPS")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_HEADER")
+        return {"FINISHED"}
+
+class SOLLUMZ_OT_delete_archetype_extension_step(bpy.types.Operator):
+    """Delete the selected step from the stair"""
+    bl_idname = "sollumz.deletearchetypeextensionstep"
+    bl_options = {"UNDO"}
+    bl_label = "Delete Step"
+
+    @classmethod
+    def poll(cls, context):
+        selected_extension = get_selected_extension(context).stairs_extension_properties
+        return selected_extension is not None
+
+    def execute(self, context):
+        selected_stair = get_selected_extension(context).stairs_extension_properties
+        selected_stair.delete_selected_stair()
+        tag_redraw(context, space_type="VIEW_3D", region_type="UI")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_PROPS")
+        tag_redraw(context, space_type="VIEW_3D", region_type="TOOL_HEADER")
+        return {"FINISHED"}
 
 class SOLLUMZ_OT_add_archetype_extension(bpy.types.Operator):
     """Add an extension to the archetype"""
@@ -280,3 +316,84 @@ class SOLLUMZ_OT_calculate_light_shaft_center_offset_location(bpy.types.Operator
     def set_extension_props(cls, context: bpy.types.Context, verts_location: Vector):
         light_shaft_props = get_selected_extension(context).light_shaft_extension_properties
         light_shaft_props.offset_position = verts_location
+
+class SOLLUMZ_OT_update_bound_box_stair(bpy.types.Operator):
+    """Update bound box from all steps"""
+    bl_idname = "sollumz.updateboundboxstair"
+    bl_options = {"UNDO"}
+    bl_label = "Update Bound Box"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_extension(context) is not None
+
+    def execute(self, context):
+        get_selected_extension(context).stairs_extension_properties.update_bound_box()
+        
+        return {"FINISHED"}
+    
+class SOLLUMZ_OT_update_step_size_and_location(bpy.types.Operator):
+    """Update step size, location and rotation from selection"""
+    bl_idname = "sollumz.updatestepsizeandlocation"
+    bl_options = {"UNDO"}
+    bl_label = "Update Step size"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_extension(context) is not None
+    
+    def execute(self, context):
+        aobj = context.active_object
+        aobj.update_from_editmode()
+
+        me = aobj.data
+        selected_edges = [e.key for e in me.edges if e.select]
+
+        if len(selected_edges) != 12:
+            self.report({"INFO"}, "You must select exactly 12 edges.")
+            return {"CANCELLED"}
+        
+        get_selected_extension(context).stairs_extension_properties.selected_step.step_properties.update_step(me, selected_edges)
+
+        return {"FINISHED"}
+    
+
+class SOLLUMZ_OT_generate_steps_from_faces(bpy.types.Operator):
+    """Generate steps from selected faces"""
+    bl_idname = "sollumz.generatestepsfromfaces"
+    bl_options = {"UNDO"}
+    bl_label = "Generate Steps from Faces"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_extension(context) is not None
+    
+    def execute(self, context):
+        aobj = context.active_object
+        aobj.update_from_editmode()
+
+        me = aobj.data
+        selected_vertices = [v.co for v in me.vertices if v.select]
+
+        if len(selected_vertices) < 4:
+            self.report({"INFO"}, "You must select atleast 4 edges.")
+            return {"CANCELLED"}
+        
+        get_selected_extension(context).stairs_extension_properties.generate_steps(selected_vertices)
+
+        return {"FINISHED"}
+    
+class SOLLUMZ_OT_mirror_step(bpy.types.Operator):
+    """Mirrors the selected step, the vector will point in the oposite direction"""
+    bl_idname = "sollumz.mirrorstep"
+    bl_options = {"UNDO"}
+    bl_label = "Mirror Step"
+
+    @classmethod
+    def poll(cls, context):
+        return get_selected_extension(context) is not None
+    
+    def execute(self, context):
+        get_selected_extension(context).stairs_extension_properties.selected_step.step_properties.mirror_step()
+
+        return {"FINISHED"}

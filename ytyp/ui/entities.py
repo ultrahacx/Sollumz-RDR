@@ -1,9 +1,10 @@
 import bpy
 from ...tabbed_panels import TabbedPanelHelper, TabPanel
 from ...sollumz_ui import BasicListHelper, FlagsPanel, FilterListHelper, draw_list_with_add_remove
+from ...sollumz_properties import SollumzGame
 from ..properties.ytyp import ArchetypeType
 from ..properties.mlo import EntityProperties, MloEntityProperties
-from ..utils import get_selected_archetype, get_selected_entity
+from ..utils import get_selected_archetype, get_selected_entity, get_selected_ytyp
 from .extensions import ExtensionsListHelper, ExtensionsPanelHelper
 from .mlo import SOLLUMZ_PT_MLO_PANEL
 
@@ -133,6 +134,7 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
         layout.use_property_decorate = False
         selected_archetype = get_selected_archetype(context)
         selected_entity = get_selected_entity(context)
+        selected_ytyp = get_selected_ytyp(context)
 
         layout.prop(selected_entity, "linked_object")
 
@@ -161,6 +163,8 @@ class SOLLUMZ_PT_MLO_ENTITY_PANEL(TabPanel, bpy.types.Panel):
 
         for prop_name in EntityProperties.__annotations__:
             if prop_name == "flags":
+                continue
+            elif prop_name in {"blend_age_layer", "blend_age_dirt"} and selected_ytyp.game != SollumzGame.RDR:
                 continue
             layout.prop(selected_entity, prop_name)
 

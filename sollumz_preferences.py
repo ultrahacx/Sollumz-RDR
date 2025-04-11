@@ -8,7 +8,7 @@ from bpy.props import (
 import os
 import ast
 from typing import Any
-from .sollumz_properties import SollumType
+from .sollumz_properties import SollumType, SollumzGame, items_from_enums
 from configparser import ConfigParser
 from typing import Optional
 
@@ -363,6 +363,14 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         update=_save_preferences
     )
 
+    default_game: bpy.props.EnumProperty(
+        items=items_from_enums(SollumzGame),
+        name="Default game:",
+        description="Sets the game with which Blender will start",
+        default=SollumzGame.GTA,
+        update=_save_preferences
+    )
+
     shared_textures_directories: CollectionProperty(
         name="Shared Textures",
         type=SzSharedTexturesDirectory,
@@ -390,6 +398,7 @@ class SollumzAddonPreferences(bpy.types.AddonPreferences):
         layout.prop(self, "extra_color_swatches")
         layout.prop(self, "sollumz_icon_header")
         layout.prop(self, "use_text_name_as_mat_name")
+        layout.prop(self, "default_game")
 
         from .sollumz_ui import draw_list_with_add_remove
         layout.separator()
@@ -463,7 +472,12 @@ def _apply_preferences(data_block: bpy.types.ID, config: ConfigParser, section: 
             continue
 
         value_str = config.get(section, key)
-        value = ast.literal_eval(value_str)
+
+        #it crashes for enum
+        if key == "default_game":
+            value = value_str
+        else:
+            value = ast.literal_eval(value_str)
 
         if key == "shared_textures_directories":
             # Special case to handle CollectionProperty
